@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 
 #api data
 USE_TEST_API = True
-TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae078-a095-7394-8430-65f60c8e0a63"
+TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 
 response = requests.get(TEST_API_URL)
 data = response.json()

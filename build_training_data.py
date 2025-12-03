@@ -6,7 +6,7 @@ import pandas as pd
 
 # Get API data
 USE_TEST_API = True
-TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae078-a095-7394-8430-65f60c8e0a63"
+TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
 REAL_API_URL = "https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED"
 
