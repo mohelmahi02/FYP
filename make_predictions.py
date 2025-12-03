@@ -5,12 +5,23 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 # Get API data
-USE_TEST_API = True
-TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae078-a095-7394-8430-65f60c8e0a63"
+USE_TEST_API = False
+TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
+REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
+REAL_API_URL = "https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED"
 
-response = requests.get(TEST_API_URL)
+if USE_TEST_API:
+    response = requests.get(TEST_API_URL)
+else:
+    headers = {"X-Auth-Token": REAL_API_KEY}
+    response = requests.get(REAL_API_URL, headers=headers)
+
 data = response.json()
 matches = data['matches']
+
+print(f" Using {'TEST' if USE_TEST_API else 'REAL'} API")
+print(f" Total matches: {len(matches)}")
+
 
 #helper functions
 
@@ -100,9 +111,8 @@ model.fit(X, y)
 
 print(" Model trained!")
 
-# ============================================
-# MAKE PREDICTIONS FOR NEW MATCHES
-# ============================================
+#make predictions for a new match
+
 
 print("\n" + "="*50)
 print(" MATCH PREDICTIONS")
