@@ -1,12 +1,10 @@
-#train random forest model
+#make match outcome predictions using trained model
 
 import requests
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
-#api data
+# Get API data
 USE_TEST_API = True
 TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae078-a095-7394-8430-65f60c8e0a63"
 
@@ -14,7 +12,8 @@ response = requests.get(TEST_API_URL)
 data = response.json()
 matches = data['matches']
 
-#functions
+#helper functions
+
 def calculate_team_stats(matches, team_name):
     goals_scored = 0
     goals_conceded = 0
@@ -57,9 +56,11 @@ def get_match_outcome(home_goals, away_goals):
     else:
         return 0
 
-#build training data 
-print("Building training data...")
+#build training data and model
+
+print("Preparing model...")
 training_data = []
+
 for i, match in enumerate(matches):
     home_team = match['homeTeam']['name']
     away_team = match['awayTeam']['name']
@@ -90,44 +91,53 @@ for i, match in enumerate(matches):
     training_data.append(features)
 
 df = pd.DataFrame(training_data)
-print(f" Training samples: {len(df)}")
 
-# Random forest model
-print("\n Training Random Forest model...")
-
-# Separate features (X) from outcome (y)
 X = df.drop('outcome', axis=1)
 y = df['outcome']
 
-# Split into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-print(f" Training set: {len(X_train)} matches")
-print(f" Testing set: {len(X_test)} matches")
-
-# Create Random Forest with 100 trees
 model = RandomForestClassifier(n_estimators=100, random_state=42)
-
-# Train the model
-model.fit(X_train, y_train)
+model.fit(X, y)
 
 print(" Model trained!")
 
-# Calculate accuracy
-predictions = model.predict(X_test) 
-accuracy = accuracy_score(y_test, predictions)
+# ============================================
+# MAKE PREDICTIONS FOR NEW MATCHES
+# ============================================
 
-print(f" Model Accuracy: {accuracy * 100:.2f}%")
-print(f"   ({int(accuracy * len(X_test))}/{len(X_test)} correct predictions)")
+print("\n" + "="*50)
+print(" MATCH PREDICTIONS")
+print("="*50)
 
-#  feature importance
-print("\n Feature Importance:")
-importance = pd.DataFrame({
-    'feature': X.columns,
-    'importance': model.feature_importances_
-}).sort_values('importance', ascending=False)
+# Predict Arsenal vs Chelsea
+team1 = "Arsenal FC"
+team2 = "Chelsea FC"
 
-for idx, row in importance.iterrows():
-    print(f"   {row['feature']:20s} {row['importance']*100:5.1f}%")
+team1_stats = calculate_team_stats(matches, team1)
+team2_stats = calculate_team_stats(matches, team2)
+
+new_match = pd.DataFrame({
+    'home_goals_avg': [team1_stats[0]],
+    'home_conceded_avg': [team1_stats[1]],
+    'home_wins': [team1_stats[2]],
+    'away_goals_avg': [team2_stats[0]],
+    'away_conceded_avg': [team2_stats[1]],
+    'away_wins': [team2_stats[2]]
+})
+
+print(f"\n {team1} (home) vs {team2} (away)")
+print(f"\nTeam Stats:")
+print(f"  {team1}: {team1_stats[0]:.2f} goals/game, {team1_stats[2]} wins")
+print(f"  {team2}: {team2_stats[0]:.2f} goals/game, {team2_stats[2]} wins")
+
+prediction = model.predict(new_match)[0]
+probabilities = model.predict_proba(new_match)[0]
+
+outcome_names = {0: 'Away Win', 1: 'Draw', 2: 'Home Win'}
+
+print(f"\n PREDICTION: {outcome_names[prediction]}")
+print(f"\n Confidence:")
+print(f"   Home Win: {probabilities[2]*100:5.1f}%")
+print(f"   Draw:     {probabilities[1]*100:5.1f}%")
+print(f"   Away Win: {probabilities[0]*100:5.1f}%")
+
+print("\n" + "="*50)
