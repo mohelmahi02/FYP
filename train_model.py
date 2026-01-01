@@ -6,14 +6,17 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-#api data
-USE_TEST_API = False
-TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
+# real football-data.org API
+API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
+API_URL = "https://api.football-data.org/v4/competitions/PL/matches"
 
-response = requests.get(TEST_API_URL)
+headers = {"X-Auth-Token": API_KEY}
+response = requests.get(API_URL, headers=headers)
 data = response.json()
-matches = data['matches']
 
+print(f"Fetched {len(data['matches'])} matches from API")
+
+matches = data['matches']
 #functions
 def calculate_team_stats(matches, team_name):
     goals_scored = 0
