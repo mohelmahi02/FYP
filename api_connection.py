@@ -2,7 +2,7 @@
 import requests
 
 # Configuration
-USE_TEST_API = True
+USE_TEST_API = False
 
 # API URLs
 TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"

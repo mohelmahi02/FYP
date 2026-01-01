@@ -5,7 +5,7 @@ import requests
 import pandas as pd
 
 # Get API data
-USE_TEST_API = True
+USE_TEST_API = False
 TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
 REAL_API_URL = "https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED"
@@ -19,9 +19,7 @@ else:
 data = response.json()
 matches = data['matches']
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
+#helper functions
 
 def calculate_team_stats(matches, team_name):
     """Calculate team statistics"""
@@ -71,9 +69,7 @@ def get_match_outcome(home_goals, away_goals):
     else:
         return 0  # Loss
 
-# ============================================
-# BUILD TRAINING DATA
-# ============================================
+#build training data
 
 print("Building training dataset...")
 training_data = []
