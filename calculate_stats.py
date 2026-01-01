@@ -3,7 +3,7 @@
 import requests
 
 # Get data from API
-USE_TEST_API = True
+USE_TEST_API = False
 TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
 REAL_API_URL = "https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED"

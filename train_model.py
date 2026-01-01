@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 #api data
-USE_TEST_API = True
+USE_TEST_API = False
 TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 
 response = requests.get(TEST_API_URL)
@@ -131,3 +131,70 @@ importance = pd.DataFrame({
 
 for idx, row in importance.iterrows():
     print(f"   {row['feature']:20s} {row['importance']*100:5.1f}%")
+
+
+
+# Decision Tree Model
+
+from sklearn.tree import DecisionTreeClassifier
+
+print("\n Training Decision Tree model...")
+
+# Create Decision Tree
+dt_model = DecisionTreeClassifier(random_state=42)
+
+# Train the model
+dt_model.fit(X_train, y_train)
+
+print(" Model trained!")
+
+# Calculate accuracy
+dt_predictions = dt_model.predict(X_test)
+dt_accuracy = accuracy_score(y_test, dt_predictions)
+
+print(f" Model Accuracy: {dt_accuracy * 100:.2f}%")
+print(f"   ({int(dt_accuracy * len(X_test))}/{len(X_test)} correct predictions)")
+
+
+
+# Logistic Regression Model
+
+from sklearn.linear_model import LogisticRegression
+
+print("\n Training Logistic Regression model...")
+
+# Create Logistic Regression
+lr_model = LogisticRegression(random_state=42, max_iter=1000)
+
+# Train the model
+lr_model.fit(X_train, y_train)
+
+print(" Model trained!")
+
+# Calculate accuracy
+lr_predictions = lr_model.predict(X_test)
+lr_accuracy = accuracy_score(y_test, lr_predictions)
+
+print(f" Model Accuracy: {lr_accuracy * 100:.2f}%")
+print(f"   ({int(lr_accuracy * len(X_test))}/{len(X_test)} correct predictions)")
+
+
+
+# Model comparison
+
+print("\n" + "="*50)
+print("MODEL COMPARISON RESULTS")
+print("="*50)
+print(f"Random Forest:        {accuracy * 100:.2f}%")
+print(f"Decision Tree:        {dt_accuracy * 100:.2f}%")
+print(f"Logistic Regression:  {lr_accuracy * 100:.2f}%")
+print("="*50)
+
+# Determine best model
+models = {
+    'Random Forest': accuracy,
+    'Decision Tree': dt_accuracy,
+    'Logistic Regression': lr_accuracy
+}
+best_model = max(models, key=models.get)
+print(f"\n Best performing model: {best_model} ({models[best_model] * 100:.2f}%)")
