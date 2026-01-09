@@ -1,153 +1,146 @@
-#make match outcome predictions using trained model
 
+# Predict upcoming Premier League matches using saved best model (Logistic Regression)
+
+import os
+import pickle
 import requests
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from datetime import datetime,timezone
 
-# Get API data
-USE_TEST_API = False
-TEST_API_URL = "https://jsonblob.com/api/jsonBlob/019ae639-062a-7bc8-bd2f-65d55859bb27"
 REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
-REAL_API_URL = "https://api.football-data.org/v4/competitions/PL/matches?status=FINISHED"
+BASE_URL = "https://api.football-data.org/v4/competitions/PL/matches"
 
-if USE_TEST_API:
-    response = requests.get(TEST_API_URL)
-else:
-    headers = {"X-Auth-Token": REAL_API_KEY}
-    response = requests.get(REAL_API_URL, headers=headers)
+HEADERS = {"X-Auth-Token": REAL_API_KEY}
 
-data = response.json()
-matches = data['matches']
+MODEL_PATH = os.path.join("models", "logistic_regression.pkl")
 
-print(f" Using {'TEST' if USE_TEST_API else 'REAL'} API")
-print(f" Total matches: {len(matches)}")
+outcome_names = {0: "Away Win", 1: "Draw", 2: "Home Win"}
 
-
-#helper functions
 
 def calculate_team_stats(matches, team_name):
     goals_scored = 0
     goals_conceded = 0
     wins = 0
     games_played = 0
-    
+
     for match in matches:
-        home_team = match['homeTeam']['name']
-        away_team = match['awayTeam']['name']
-        home_goals = match['score']['fullTime']['home']
-        away_goals = match['score']['fullTime']['away']
-        
+        home_team = match["homeTeam"]["name"]
+        away_team = match["awayTeam"]["name"]
+        home_goals = match["score"]["fullTime"]["home"]
+        away_goals = match["score"]["fullTime"]["away"]
+
         if home_goals is None or away_goals is None:
             continue
-            
+
         if home_team == team_name:
             goals_scored += home_goals
             goals_conceded += away_goals
             if home_goals > away_goals:
                 wins += 1
             games_played += 1
-            
+
         elif away_team == team_name:
             goals_scored += away_goals
             goals_conceded += home_goals
             if away_goals > home_goals:
                 wins += 1
             games_played += 1
-    
+
     if games_played == 0:
-        return 0, 0, 0
-    
+        return 0.0, 0.0, 0
+
     return (goals_scored / games_played, goals_conceded / games_played, wins)
 
-def get_match_outcome(home_goals, away_goals):
-    if home_goals > away_goals:
-        return 2
-    elif home_goals == away_goals:
-        return 1
-    else:
-        return 0
 
-#build training data and model
-
-print("Preparing model...")
-training_data = []
-
-for i, match in enumerate(matches):
-    home_team = match['homeTeam']['name']
-    away_team = match['awayTeam']['name']
-    home_goals = match['score']['fullTime']['home']
-    away_goals = match['score']['fullTime']['away']
-    
-    if home_goals is None or away_goals is None:
-        continue
-    
-    previous_matches = matches[:i]
-    
-    if len(previous_matches) < 5:
-        continue
-    
-    home_stats = calculate_team_stats(previous_matches, home_team)
-    away_stats = calculate_team_stats(previous_matches, away_team)
-    
-    features = {
-        'home_goals_avg': home_stats[0],
-        'home_conceded_avg': home_stats[1],
-        'home_wins': home_stats[2],
-        'away_goals_avg': away_stats[0],
-        'away_conceded_avg': away_stats[1],
-        'away_wins': away_stats[2],
-        'outcome': get_match_outcome(home_goals, away_goals)
-    }
-    
-    training_data.append(features)
-
-df = pd.DataFrame(training_data)
-
-X = df.drop('outcome', axis=1)
-y = df['outcome']
-
-model = RandomForestClassifier(n_estimators=100, random_state=42)
-model.fit(X, y)
-
-print(" Model trained!")
-
-#make predictions for a new match
+def fetch_matches(status):
+    url = f"{BASE_URL}?status={status}"
+    r = requests.get(url, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()["matches"]
 
 
-print("\n" + "="*50)
-print(" MATCH PREDICTIONS")
-print("="*50)
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(
+            f"Model not found at {MODEL_PATH}. Run train_model.py and save the model first."
+        )
+    with open(MODEL_PATH, "rb") as f:
+        return pickle.load(f)
 
-# Predict Arsenal vs Chelsea
-team1 = "Arsenal FC"
-team2 = "Chelsea FC"
 
-team1_stats = calculate_team_stats(matches, team1)
-team2_stats = calculate_team_stats(matches, team2)
+def build_features(finished_matches, home_team, away_team):
+    home_stats = calculate_team_stats(finished_matches, home_team)
+    away_stats = calculate_team_stats(finished_matches, away_team)
 
-new_match = pd.DataFrame({
-    'home_goals_avg': [team1_stats[0]],
-    'home_conceded_avg': [team1_stats[1]],
-    'home_wins': [team1_stats[2]],
-    'away_goals_avg': [team2_stats[0]],
-    'away_conceded_avg': [team2_stats[1]],
-    'away_wins': [team2_stats[2]]
-})
+    return pd.DataFrame(
+        {
+            "home_goals_avg": [home_stats[0]],
+            "home_conceded_avg": [home_stats[1]],
+            "home_wins": [home_stats[2]],
+            "away_goals_avg": [away_stats[0]],
+            "away_conceded_avg": [away_stats[1]],
+            "away_wins": [away_stats[2]],
+        }
+    )
 
-print(f"\n {team1} (home) vs {team2} (away)")
-print(f"\nTeam Stats:")
-print(f"  {team1}: {team1_stats[0]:.2f} goals/game, {team1_stats[2]} wins")
-print(f"  {team2}: {team2_stats[0]:.2f} goals/game, {team2_stats[2]} wins")
 
-prediction = model.predict(new_match)[0]
-probabilities = model.predict_proba(new_match)[0]
+def predict_upcoming(limit=20):
+    print("Loading saved model...")
+    model = load_model()
+    print("✓ Model loaded:", type(model).__name__)
 
-outcome_names = {0: 'Away Win', 1: 'Draw', 2: 'Home Win'}
+    print("Fetching finished matches for stats...")
+    finished_matches = fetch_matches("FINISHED")
+    print(f"✓ Finished matches: {len(finished_matches)}")
 
-print(f"\n PREDICTION: {outcome_names[prediction]}")
-print(f"\n Confidence:")
-print(f"   Home Win: {probabilities[2]*100:5.1f}%")
-print(f"   Draw:     {probabilities[1]*100:5.1f}%")
-print(f"   Away Win: {probabilities[0]*100:5.1f}%")
+    print("Fetching scheduled matches...")
+    scheduled_matches = fetch_matches("SCHEDULED")
+    print(f"✓ Scheduled matches: {len(scheduled_matches)}")
 
-print("\n" + "="*50)
+    predictions = []
+
+    for match in scheduled_matches[:limit]:
+        home_team = match["homeTeam"]["name"]
+        away_team = match["awayTeam"]["name"]
+        utc_date = match.get("utcDate")  # ISO string
+
+        X_new = build_features(finished_matches, home_team, away_team)
+
+        pred_class = int(model.predict(X_new)[0])
+        probs = model.predict_proba(X_new)[0]
+
+        predictions.append(
+            {
+                "home_team": home_team,
+                "away_team": away_team,
+                "utc_date": utc_date,
+                "prediction": outcome_names[pred_class],
+                "home_win_prob": float(probs[2]),
+                "draw_prob": float(probs[1]),
+                "away_win_prob": float(probs[0]),
+                "model_used": "Logistic Regression",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+    return predictions
+
+
+if __name__ == "__main__":
+    preds = predict_upcoming(limit=10)
+
+    print("\n" + "=" * 60)
+    print("UPCOMING MATCH PREDICTIONS (Top 10)")
+    print("=" * 60)
+
+    for p in preds:
+        print(f"\n{p['home_team']} vs {p['away_team']}")
+        print(f"Date (UTC): {p['utc_date']}")
+        print(f"Prediction: {p['prediction']}")
+        print(
+            f"Confidence -> Home: {p['home_win_prob']*100:.1f}% | "
+            f"Draw: {p['draw_prob']*100:.1f}% | "
+            f"Away: {p['away_win_prob']*100:.1f}%"
+        )
+
+    print("\n" + "=" * 60)

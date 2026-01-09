@@ -1,5 +1,7 @@
 #train random forest model
 
+import os 
+import pickle
 import requests
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -201,3 +203,35 @@ models = {
 }
 best_model = max(models, key=models.get)
 print(f"\n Best performing model: {best_model} ({models[best_model] * 100:.2f}%)")
+
+print("\nSaving trained models...")
+
+# create folder if not exists
+os.makedirs("models", exist_ok=True)
+
+# Save each model
+with open("models/random_forest.pkl", "wb") as f:
+    pickle.dump(model, f)
+
+with open("models/decision_tree.pkl", "wb") as f:
+    pickle.dump(dt_model, f)
+
+with open("models/logistic_regression.pkl", "wb") as f:
+    pickle.dump(lr_model, f)
+
+# Save results / best model info
+model_results = {
+    "random_forest": accuracy,
+    "decision_tree": dt_accuracy,
+    "logistic_regression": lr_accuracy,
+    "best_model": best_model,
+    "num_samples": len(df)
+}
+
+with open("models/model_results.pkl", "wb") as f:
+    pickle.dump(model_results, f)
+
+print("✓ Saved: models/random_forest.pkl")
+print("✓ Saved: models/decision_tree.pkl")
+print("✓ Saved: models/logistic_regression.pkl")
+print("✓ Saved: models/model_results.pkl")
