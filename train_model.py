@@ -231,7 +231,7 @@ model_results = {
 with open("models/model_results.pkl", "wb") as f:
     pickle.dump(model_results, f)
 
-print("✓ Saved: models/random_forest.pkl")
-print("✓ Saved: models/decision_tree.pkl")
-print("✓ Saved: models/logistic_regression.pkl")
-print("✓ Saved: models/model_results.pkl")
+print(" Saved: models/random_forest.pkl")
+print(" Saved: models/decision_tree.pkl")
+print(" Saved: models/logistic_regression.pkl")
+print(" Saved: models/model_results.pkl")
