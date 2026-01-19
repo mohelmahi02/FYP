@@ -147,16 +147,35 @@ def upcoming():
 
 @app.get("/api/predict")
 def predict():
-    home = request.args.get("home")
-    away = request.args.get("away")
+    # Get and clean query parameters
+    home = (request.args.get("home") or "").strip()
+    away = (request.args.get("away") or "").strip()
+
+    # Validate presence
     if not home or not away:
-        return jsonify({"error": "Provide query params: home and away"}), 400
+        return jsonify({
+            "error": "Query parameters 'home' and 'away' are required"
+        }), 400
 
-    model = load_model()
-    finished = fetch_matches("FINISHED")
-    p = predict_match(model, finished, home, away)
-    return jsonify(p)
+    # Prevent same-team prediction
+    if home.lower() == away.lower():
+        return jsonify({
+            "error": "Home and away teams must be different"
+        }), 400
 
+    try:
+        model = load_model()
+        finished_matches = fetch_matches("FINISHED")
+        prediction = predict_match(model, finished_matches, home, away)
+        return jsonify(prediction)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 500
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    except Exception:
+        return jsonify({
+            "error": "An unexpected error occurred while generating prediction"
+        }), 500
