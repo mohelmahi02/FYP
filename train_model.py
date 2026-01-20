@@ -62,37 +62,52 @@ def get_match_outcome(home_goals, away_goals):
     else:
         return 0
 
-#build training data 
+# build training data
 print("Building training data...")
 training_data = []
+
 for i, match in enumerate(matches):
-    home_team = match['homeTeam']['name']
-    away_team = match['awayTeam']['name']
-    home_goals = match['score']['fullTime']['home']
-    away_goals = match['score']['fullTime']['away']
-    
+    home_team = match["homeTeam"]["name"]
+    away_team = match["awayTeam"]["name"]
+    home_goals = match["score"]["fullTime"]["home"]
+    away_goals = match["score"]["fullTime"]["away"]
+
     if home_goals is None or away_goals is None:
         continue
-    
+
+    # Use only matches before this one (avoid leakage)
     previous_matches = matches[:i]
-    
+
+    # Need at least 5 previous matches for stats
     if len(previous_matches) < 5:
         continue
-    
+
+    #  Calculate stats FIRST
     home_stats = calculate_team_stats(previous_matches, home_team)
     away_stats = calculate_team_stats(previous_matches, away_team)
-    
+
+    #  Unpack stats
+    home_goals_avg, home_conceded_avg, home_wins = home_stats
+    away_goals_avg, away_conceded_avg, away_wins = away_stats
+
+    #  Feature engineering happens here
     features = {
-        'home_goals_avg': home_stats[0],
-        'home_conceded_avg': home_stats[1],
-        'home_wins': home_stats[2],
-        'away_goals_avg': away_stats[0],
-        'away_conceded_avg': away_stats[1],
-        'away_wins': away_stats[2],
-        'outcome': get_match_outcome(home_goals, away_goals)
+        "home_goals_avg": home_goals_avg,
+        "home_conceded_avg": home_conceded_avg,
+        "home_wins": home_wins,
+        "away_goals_avg": away_goals_avg,
+        "away_conceded_avg": away_conceded_avg,
+        "away_wins": away_wins,
+
+        # engineered features
+        "home_goal_diff": home_goals_avg - home_conceded_avg,
+        "away_goal_diff": away_goals_avg - away_conceded_avg,
+
+        "outcome": get_match_outcome(home_goals, away_goals),
     }
-    
+
     training_data.append(features)
+
 
 df = pd.DataFrame(training_data)
 print(f" Training samples: {len(df)}")
