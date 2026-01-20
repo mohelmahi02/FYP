@@ -61,6 +61,40 @@ def get_match_outcome(home_goals, away_goals):
         return 1
     else:
         return 0
+    
+    
+
+def calculate_form_points(matches, team_name, last_n=5):
+    points = 0
+    games = 0
+
+    for match in reversed(matches):
+        if games >= last_n:
+            break
+
+        home_team = match["homeTeam"]["name"]
+        away_team = match["awayTeam"]["name"]
+        home_goals = match["score"]["fullTime"]["home"]
+        away_goals = match["score"]["fullTime"]["away"]
+
+        if home_goals is None or away_goals is None:
+            continue
+
+        if team_name != home_team and team_name != away_team:
+            continue
+
+        if home_goals == away_goals:
+            points += 1
+        else:
+            team_won = (team_name == home_team and home_goals > away_goals) or \
+                       (team_name == away_team and away_goals > home_goals)
+            if team_won:
+                points += 3
+
+        games += 1
+
+    return points
+
 
 # build training data
 print("Building training data...")
@@ -81,17 +115,18 @@ for i, match in enumerate(matches):
     # Need at least 5 previous matches for stats
     if len(previous_matches) < 5:
         continue
+    home_goals_avg, home_conceded_avg, home_wins = calculate_team_stats(previous_matches, home_team)
+    away_goals_avg, away_conceded_avg, away_wins = calculate_team_stats(previous_matches, away_team)
 
-    #  Calculate stats FIRST
-    home_stats = calculate_team_stats(previous_matches, home_team)
-    away_stats = calculate_team_stats(previous_matches, away_team)
-
-    #  Unpack stats
-    home_goals_avg, home_conceded_avg, home_wins = home_stats
-    away_goals_avg, away_conceded_avg, away_wins = away_stats
-
+    # feature engineering
     home_goal_diff = home_goals_avg - home_conceded_avg
     away_goal_diff = away_goals_avg - away_conceded_avg
+
+    goal_diff_diff = home_goal_diff - away_goal_diff
+    wins_diff = home_wins - away_wins
+
+    home_form_points_5 = calculate_form_points(previous_matches, home_team, last_n=5)
+    away_form_points_5 = calculate_form_points(previous_matches, away_team, last_n=5)
 
     features = {
         "home_goals_avg": home_goals_avg,
@@ -105,14 +140,22 @@ for i, match in enumerate(matches):
         "home_goal_diff": home_goal_diff,
         "away_goal_diff": away_goal_diff,
 
-        # Feature #2 (relative strength)
-        "goal_diff_diff": home_goal_diff - away_goal_diff,
-        "wins_diff": home_wins - away_wins,
+        # Feature #2
+        "goal_diff_diff": goal_diff_diff,
+        "wins_diff": wins_diff,
+
+        # Feature #3
+        "home_form_points_5": home_form_points_5,
+        "away_form_points_5": away_form_points_5,
 
         "outcome": get_match_outcome(home_goals, away_goals),
     }
 
     training_data.append(features)
+
+
+
+
 
 
 df = pd.DataFrame(training_data)
