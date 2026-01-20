@@ -90,7 +90,9 @@ for i, match in enumerate(matches):
     home_goals_avg, home_conceded_avg, home_wins = home_stats
     away_goals_avg, away_conceded_avg, away_wins = away_stats
 
-    #  Feature engineering happens here
+    home_goal_diff = home_goals_avg - home_conceded_avg
+    away_goal_diff = away_goals_avg - away_conceded_avg
+
     features = {
         "home_goals_avg": home_goals_avg,
         "home_conceded_avg": home_conceded_avg,
@@ -99,9 +101,13 @@ for i, match in enumerate(matches):
         "away_conceded_avg": away_conceded_avg,
         "away_wins": away_wins,
 
-        # engineered features
-        "home_goal_diff": home_goals_avg - home_conceded_avg,
-        "away_goal_diff": away_goals_avg - away_conceded_avg,
+        # Feature #1
+        "home_goal_diff": home_goal_diff,
+        "away_goal_diff": away_goal_diff,
+
+        # Feature #2 (relative strength)
+        "goal_diff_diff": home_goal_diff - away_goal_diff,
+        "wins_diff": home_wins - away_wins,
 
         "outcome": get_match_outcome(home_goals, away_goals),
     }
