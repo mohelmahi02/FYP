@@ -69,15 +69,15 @@ def load_model():
 
 
 def build_features(finished_matches, home_team, away_team):
-    # Calculate stats for both teams from finished match history
     home_stats = calculate_team_stats(finished_matches, home_team)
     away_stats = calculate_team_stats(finished_matches, away_team)
 
-    # Unpack
     home_goals_avg, home_conceded_avg, home_wins = home_stats
     away_goals_avg, away_conceded_avg, away_wins = away_stats
 
-    # Build feature vector
+    home_goal_diff = home_goals_avg - home_conceded_avg
+    away_goal_diff = away_goals_avg - away_conceded_avg
+
     return pd.DataFrame({
         "home_goals_avg": [home_goals_avg],
         "home_conceded_avg": [home_conceded_avg],
@@ -87,10 +87,14 @@ def build_features(finished_matches, home_team, away_team):
         "away_conceded_avg": [away_conceded_avg],
         "away_wins": [away_wins],
 
-        # NEW engineered features
-        "home_goal_diff": [home_goals_avg - home_conceded_avg],
-        "away_goal_diff": [away_goals_avg - away_conceded_avg],
+        "home_goal_diff": [home_goal_diff],
+        "away_goal_diff": [away_goal_diff],
+
+        # (relative strength)
+        "goal_diff_diff": [home_goal_diff - away_goal_diff],
+        "wins_diff": [home_wins - away_wins],
     })
+
 
 
 
