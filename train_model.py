@@ -169,9 +169,16 @@ X = df.drop('outcome', axis=1)
 y = df['outcome']
 
 # Split into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+split_idx = int(len(df) * 0.8)
+
+X_train = X.iloc[:split_idx]
+y_train = y.iloc[:split_idx]
+
+X_test = X.iloc[split_idx:]
+y_test = y.iloc[split_idx:]
+
+print(f" Training set: {len(X_train)} matches (earlier)")
+print(f" Testing set: {len(X_test)} matches (later)")
 
 print(f" Training set: {len(X_train)} matches")
 print(f" Testing set: {len(X_test)} matches")
