@@ -260,7 +260,7 @@ print("="*50 + "\n")
 
 
 # Create Random Forest with 100 trees
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(n_estimators=200, random_state=42,class_weight="balanced")
 
 # Train the model
 model.fit(X_train, y_train)
@@ -293,7 +293,7 @@ from sklearn.tree import DecisionTreeClassifier
 print("\n Training Decision Tree model...")
 
 # Create Decision Tree
-dt_model = DecisionTreeClassifier(random_state=42)
+dt_model = DecisionTreeClassifier(random_state=42, class_weight="balanced")
 
 # Train the model
 dt_model.fit(X_train, y_train)
@@ -316,8 +316,7 @@ from sklearn.linear_model import LogisticRegression
 print("\n Training Logistic Regression model...")
 
 # Create Logistic Regression
-lr_model = LogisticRegression(random_state=42, max_iter=1000)
-
+lr_model = LogisticRegression(random_state=42, max_iter=2000, class_weight="balanced")
 # Train the model
 lr_model.fit(X_train, y_train)
 
