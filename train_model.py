@@ -3,6 +3,7 @@
 import os 
 import pickle
 import requests
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -63,6 +64,8 @@ def get_match_outcome(home_goals, away_goals):
         return 0
     
     
+    
+    
 
 def calculate_form_points(matches, team_name, last_n=5):
     points = 0
@@ -95,6 +98,36 @@ def calculate_form_points(matches, team_name, last_n=5):
 
     return points
 
+def calculate_home_away_stats(matches, team_name, is_home=True):
+    goals_scored = 0
+    goals_conceded = 0
+    games_played = 0
+
+    for match in matches:
+        home_team = match["homeTeam"]["name"]
+        away_team = match["awayTeam"]["name"]
+        home_goals = match["score"]["fullTime"]["home"]
+        away_goals = match["score"]["fullTime"]["away"]
+
+        if home_goals is None or away_goals is None:
+            continue
+
+        if is_home and home_team == team_name:
+            goals_scored += home_goals
+            goals_conceded += away_goals
+            games_played += 1
+
+        elif not is_home and away_team == team_name:
+            goals_scored += away_goals
+            goals_conceded += home_goals
+            games_played += 1
+
+    if games_played == 0:
+        return 0.0, 0.0
+
+    return goals_scored / games_played, goals_conceded / games_played
+
+
 
 # build training data
 print("Building training data...")
@@ -109,16 +142,28 @@ for i, match in enumerate(matches):
     if home_goals is None or away_goals is None:
         continue
 
-    # Use only matches before this one (avoid leakage)
     previous_matches = matches[:i]
 
-    # Need at least 5 previous matches for stats
     if len(previous_matches) < 5:
         continue
-    home_goals_avg, home_conceded_avg, home_wins = calculate_team_stats(previous_matches, home_team)
-    away_goals_avg, away_conceded_avg, away_wins = calculate_team_stats(previous_matches, away_team)
 
-    # feature engineering
+    # Overall team stats
+    home_goals_avg, home_conceded_avg, home_wins = calculate_team_stats(
+        previous_matches, home_team
+    )
+    away_goals_avg, away_conceded_avg, away_wins = calculate_team_stats(
+        previous_matches, away_team
+    )
+
+    # Home / Away specific stats
+    home_home_goals_avg, home_home_conceded_avg = calculate_home_away_stats(
+        previous_matches, home_team, is_home=True
+    )
+    away_away_goals_avg, away_away_conceded_avg = calculate_home_away_stats(
+        previous_matches, away_team, is_home=False
+    )
+
+    # Feature engineering
     home_goal_diff = home_goals_avg - home_conceded_avg
     away_goal_diff = away_goals_avg - away_conceded_avg
 
@@ -136,23 +181,24 @@ for i, match in enumerate(matches):
         "away_conceded_avg": away_conceded_avg,
         "away_wins": away_wins,
 
-        # Feature #1
         "home_goal_diff": home_goal_diff,
         "away_goal_diff": away_goal_diff,
-
-        # Feature #2
         "goal_diff_diff": goal_diff_diff,
         "wins_diff": wins_diff,
 
-        # Feature #3
         "home_form_points_5": home_form_points_5,
         "away_form_points_5": away_form_points_5,
+
+        # NEW home/away features
+        "home_home_goals_avg": home_home_goals_avg,
+        "home_home_conceded_avg": home_home_conceded_avg,
+        "away_away_goals_avg": away_away_goals_avg,
+        "away_away_conceded_avg": away_away_conceded_avg,
 
         "outcome": get_match_outcome(home_goals, away_goals),
     }
 
     training_data.append(features)
-
 
 
 
@@ -182,6 +228,36 @@ print(f" Testing set: {len(X_test)} matches (later)")
 
 print(f" Training set: {len(X_train)} matches")
 print(f" Testing set: {len(X_test)} matches")
+
+print("\nTrain outcome distribution:")
+print(y_train.value_counts(normalize=True))
+
+print("\nTest outcome distribution:")
+print(y_test.value_counts(normalize=True))
+
+
+# Majority-class baseline: always predict the most common class in y_train
+majority_class = int(y_train.value_counts().idxmax())
+majority_preds = np.full(shape=len(y_test), fill_value=majority_class)
+majority_acc = accuracy_score(y_test, majority_preds)
+
+# Random-weighted baseline: sample using class distribution from y_train
+class_probs = (y_train.value_counts(normalize=True)
+               .reindex([0, 1, 2], fill_value=0.0)
+               .values)
+
+rng = np.random.default_rng(42)
+random_preds = rng.choice([0, 1, 2], size=len(y_test), p=class_probs)
+random_acc = accuracy_score(y_test, random_preds)
+
+print("\n" + "="*50)
+print("BASELINE RESULTS (time-based test set)")
+print("="*50)
+print(f"Majority-class baseline: {majority_acc * 100:.2f}% (predicts class {majority_class} always)")
+print(f"Random-weighted baseline: {random_acc * 100:.2f}% (based on train distribution)")
+print("="*50 + "\n")
+
+
 
 # Create Random Forest with 100 trees
 model = RandomForestClassifier(n_estimators=100, random_state=42)
