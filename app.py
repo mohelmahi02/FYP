@@ -147,35 +147,38 @@ def upcoming():
 
 @app.get("/api/predict")
 def predict():
-    # Get and clean query parameters
     home = (request.args.get("home") or "").strip()
     away = (request.args.get("away") or "").strip()
 
-    # Validate presence
     if not home or not away:
-        return jsonify({
-            "error": "Query parameters 'home' and 'away' are required"
-        }), 400
+        return jsonify({"error": "Query parameters 'home' and 'away' are required"}), 400
 
-    # Prevent same-team prediction
     if home.lower() == away.lower():
-        return jsonify({
-            "error": "Home and away teams must be different"
-        }), 400
+        return jsonify({"error": "Home and away teams must be different"}), 400
 
     try:
         model = load_model()
-        finished_matches = fetch_matches("FINISHED")
-        prediction = predict_match(model, finished_matches, home, away)
-        return jsonify(prediction)
+        finished = fetch_matches("FINISHED")
+
+        X = build_features(finished, home, away)
+        pred_class = int(model.predict(X)[0])
+        probs = model.predict_proba(X)[0]
+
+        return jsonify({
+            "home_team": home,
+            "away_team": away,
+            "prediction": OUTCOME_NAMES[pred_class],
+            "home_win_prob": float(probs[2]),
+            "draw_prob": float(probs[1]),
+            "away_win_prob": float(probs[0]),
+            "model_used": "Logistic Regression",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        })
 
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 500
-
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-
     except Exception:
-        return jsonify({
-            "error": "An unexpected error occurred while generating prediction"
-        }), 500
+        return jsonify({"error": "Unexpected error while generating prediction"}), 500
+
