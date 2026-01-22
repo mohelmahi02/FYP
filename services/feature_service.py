@@ -1,5 +1,20 @@
 import pandas as pd
 
+FEATURE_COLUMNS = [
+    "home_goals_avg",
+    "home_conceded_avg",
+    "home_wins",
+    "away_goals_avg",
+    "away_conceded_avg",
+    "away_wins",
+    "home_goal_diff",
+    "away_goal_diff",
+    "goal_diff_diff",
+    "wins_diff",
+    "home_form_points_5",
+    "away_form_points_5",
+]
+
 
 def calculate_team_stats(matches, team_name):
     goals_scored = 0
@@ -66,7 +81,6 @@ def calculate_form_points(matches, team_name, last_n=5):
 
     return points
 
-
 def build_features(finished_matches, home_team, away_team):
     home_goals_avg, home_conceded_avg, home_wins = calculate_team_stats(
         finished_matches, home_team
@@ -78,30 +92,22 @@ def build_features(finished_matches, home_team, away_team):
     home_goal_diff = home_goals_avg - home_conceded_avg
     away_goal_diff = away_goals_avg - away_conceded_avg
 
-    home_form_points_5 = calculate_form_points(
-        finished_matches, home_team, last_n=5
-    )
-    away_form_points_5 = calculate_form_points(
-        finished_matches, away_team, last_n=5
-    )
+    home_form_points_5 = calculate_form_points(finished_matches, home_team, 5)
+    away_form_points_5 = calculate_form_points(finished_matches, away_team, 5)
 
-    return pd.DataFrame(
-        {
-            "home_goals_avg": [home_goals_avg],
-            "home_conceded_avg": [home_conceded_avg],
-            "home_wins": [home_wins],
-            "away_goals_avg": [away_goals_avg],
-            "away_conceded_avg": [away_conceded_avg],
-            "away_wins": [away_wins],
+    df = pd.DataFrame({
+        "home_goals_avg": [home_goals_avg],
+        "home_conceded_avg": [home_conceded_avg],
+        "home_wins": [home_wins],
+        "away_goals_avg": [away_goals_avg],
+        "away_conceded_avg": [away_conceded_avg],
+        "away_wins": [away_wins],
+        "home_goal_diff": [home_goal_diff],
+        "away_goal_diff": [away_goal_diff],
+        "goal_diff_diff": [home_goal_diff - away_goal_diff],
+        "wins_diff": [home_wins - away_wins],
+        "home_form_points_5": [home_form_points_5],
+        "away_form_points_5": [away_form_points_5],
+    })
 
-            # Engineered features
-            "home_goal_diff": [home_goal_diff],
-            "away_goal_diff": [away_goal_diff],
-            "goal_diff_diff": [home_goal_diff - away_goal_diff],
-            "wins_diff": [home_wins - away_wins],
-
-            # Recent form
-            "home_form_points_5": [home_form_points_5],
-            "away_form_points_5": [away_form_points_5],
-        }
-    )
+    return df[FEATURE_COLUMNS]
