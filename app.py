@@ -6,6 +6,8 @@ import os
 import pickle
 import requests
 import pandas as pd
+from services.model_service import get_model_bundle
+
 
 app = Flask(__name__)
 
@@ -157,7 +159,10 @@ def predict():
         return jsonify({"error": "Home and away teams must be different"}), 400
 
     try:
-        model = load_model()
+        bundle = get_model_bundle()
+        model = bundle["model"]
+        model_name = bundle["best_model_name"]
+
         finished = fetch_matches("FINISHED")
 
         X = build_features(finished, home, away)
@@ -167,11 +172,11 @@ def predict():
         return jsonify({
             "home_team": home,
             "away_team": away,
-            "prediction": OUTCOME_NAMES[pred_class],
+            "prediction": OUTCOME_NAMES[pred_class],  # <-- must be OUTCOME_NAMES
             "home_win_prob": float(probs[2]),
             "draw_prob": float(probs[1]),
             "away_win_prob": float(probs[0]),
-            "model_used": "Logistic Regression",
+            "model_used": model_name,
             "generated_at": datetime.now(timezone.utc).isoformat(),
         })
 
