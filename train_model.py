@@ -8,6 +8,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from services.feature_service import build_features
+
 
 # real football-data.org API
 API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
@@ -20,112 +22,22 @@ data = response.json()
 print(f"Fetched {len(data['matches'])} matches from API")
 
 matches = data['matches']
-#functions
-def calculate_team_stats(matches, team_name):
-    goals_scored = 0
-    goals_conceded = 0
-    wins = 0
-    games_played = 0
-    
-    for match in matches:
-        home_team = match['homeTeam']['name']
-        away_team = match['awayTeam']['name']
-        home_goals = match['score']['fullTime']['home']
-        away_goals = match['score']['fullTime']['away']
-        
-        if home_goals is None or away_goals is None:
-            continue
-            
-        if home_team == team_name:
-            goals_scored += home_goals
-            goals_conceded += away_goals
-            if home_goals > away_goals:
-                wins += 1
-            games_played += 1
-            
-        elif away_team == team_name:
-            goals_scored += away_goals
-            goals_conceded += home_goals
-            if away_goals > home_goals:
-                wins += 1
-            games_played += 1
-    
-    if games_played == 0:
-        return 0, 0, 0
-    
-    return (goals_scored / games_played, goals_conceded / games_played, wins)
 
 def get_match_outcome(home_goals, away_goals):
+    """
+    Encode match outcome:
+    2 = Home Win
+    1 = Draw
+    0 = Away Win
+    """
     if home_goals > away_goals:
         return 2
     elif home_goals == away_goals:
         return 1
     else:
         return 0
-    
-    
-    
-    
 
-def calculate_form_points(matches, team_name, last_n=5):
-    points = 0
-    games = 0
 
-    for match in reversed(matches):
-        if games >= last_n:
-            break
-
-        home_team = match["homeTeam"]["name"]
-        away_team = match["awayTeam"]["name"]
-        home_goals = match["score"]["fullTime"]["home"]
-        away_goals = match["score"]["fullTime"]["away"]
-
-        if home_goals is None or away_goals is None:
-            continue
-
-        if team_name != home_team and team_name != away_team:
-            continue
-
-        if home_goals == away_goals:
-            points += 1
-        else:
-            team_won = (team_name == home_team and home_goals > away_goals) or \
-                       (team_name == away_team and away_goals > home_goals)
-            if team_won:
-                points += 3
-
-        games += 1
-
-    return points
-
-def calculate_home_away_stats(matches, team_name, is_home=True):
-    goals_scored = 0
-    goals_conceded = 0
-    games_played = 0
-
-    for match in matches:
-        home_team = match["homeTeam"]["name"]
-        away_team = match["awayTeam"]["name"]
-        home_goals = match["score"]["fullTime"]["home"]
-        away_goals = match["score"]["fullTime"]["away"]
-
-        if home_goals is None or away_goals is None:
-            continue
-
-        if is_home and home_team == team_name:
-            goals_scored += home_goals
-            goals_conceded += away_goals
-            games_played += 1
-
-        elif not is_home and away_team == team_name:
-            goals_scored += away_goals
-            goals_conceded += home_goals
-            games_played += 1
-
-    if games_played == 0:
-        return 0.0, 0.0
-
-    return goals_scored / games_played, goals_conceded / games_played
 
 
 
@@ -147,58 +59,11 @@ for i, match in enumerate(matches):
     if len(previous_matches) < 5:
         continue
 
-    # Overall team stats
-    home_goals_avg, home_conceded_avg, home_wins = calculate_team_stats(
-        previous_matches, home_team
-    )
-    away_goals_avg, away_conceded_avg, away_wins = calculate_team_stats(
-        previous_matches, away_team
-    )
+    X_row = build_features(previous_matches, home_team, away_team)
+    X_row["outcome"] = get_match_outcome(home_goals, away_goals)
 
-    # Home / Away specific stats
-    home_home_goals_avg, home_home_conceded_avg = calculate_home_away_stats(
-        previous_matches, home_team, is_home=True
-    )
-    away_away_goals_avg, away_away_conceded_avg = calculate_home_away_stats(
-        previous_matches, away_team, is_home=False
-    )
+    training_data.append(X_row.iloc[0].to_dict())
 
-    # Feature engineering
-    home_goal_diff = home_goals_avg - home_conceded_avg
-    away_goal_diff = away_goals_avg - away_conceded_avg
-
-    goal_diff_diff = home_goal_diff - away_goal_diff
-    wins_diff = home_wins - away_wins
-
-    home_form_points_5 = calculate_form_points(previous_matches, home_team, last_n=5)
-    away_form_points_5 = calculate_form_points(previous_matches, away_team, last_n=5)
-
-    features = {
-        "home_goals_avg": home_goals_avg,
-        "home_conceded_avg": home_conceded_avg,
-        "home_wins": home_wins,
-        "away_goals_avg": away_goals_avg,
-        "away_conceded_avg": away_conceded_avg,
-        "away_wins": away_wins,
-
-        "home_goal_diff": home_goal_diff,
-        "away_goal_diff": away_goal_diff,
-        "goal_diff_diff": goal_diff_diff,
-        "wins_diff": wins_diff,
-
-        "home_form_points_5": home_form_points_5,
-        "away_form_points_5": away_form_points_5,
-
-        # NEW home/away features
-        "home_home_goals_avg": home_home_goals_avg,
-        "home_home_conceded_avg": home_home_conceded_avg,
-        "away_away_goals_avg": away_away_goals_avg,
-        "away_away_conceded_avg": away_away_conceded_avg,
-
-        "outcome": get_match_outcome(home_goals, away_goals),
-    }
-
-    training_data.append(features)
 
 
 
