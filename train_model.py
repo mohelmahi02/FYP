@@ -88,8 +88,6 @@ y_train = y.iloc[:split_idx]
 X_test = X.iloc[split_idx:]
 y_test = y.iloc[split_idx:]
 
-print(f" Training set: {len(X_train)} matches (earlier)")
-print(f" Testing set: {len(X_test)} matches (later)")
 
 print(f" Training set: {len(X_train)} matches")
 print(f" Testing set: {len(X_test)} matches")
@@ -230,6 +228,10 @@ with open("models/decision_tree.pkl", "wb") as f:
 with open("models/logistic_regression.pkl", "wb") as f:
     pickle.dump(lr_model, f)
 
+
+rf_accuracy = accuracy_score(y_test, model.predict(X_test))
+dt_accuracy = accuracy_score(y_test, dt_model.predict(X_test))
+lr_accuracy = accuracy_score(y_test, lr_model.predict(X_test))
 # Save results / best model info
 model_results = {
     "random_forest": accuracy,
