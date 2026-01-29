@@ -47,32 +47,44 @@ def init_db():
     finally:
         conn.close()
 
-def save_prediction(result):
+def save_prediction(result: dict):
+    """
+    Insert one prediction row into the DB.
+    Expects keys:
+      home_team, away_team, utc_date, prediction,
+      home_win_prob, draw_prob, away_win_prob,
+      model_used, generated_at
+    """
     conn = get_conn()
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO predictions
-                    (home_team, away_team, utc_date, prediction,
-                     home_win_prob, draw_prob, away_win_prob, model_used)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                    INSERT INTO predictions (
+                        home_team, away_team, utc_date, prediction,
+                        home_win_prob, draw_prob, away_win_prob,
+                        model_used, generated_at
+                    )
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    RETURNING id;
                     """,
                     (
-                        result["home_team"],
-                        result["away_team"],
+                        result.get("home_team"),
+                        result.get("away_team"),
                         result.get("utc_date"),
-                        result["prediction"],
-                        result["home_win_prob"],
-                        result["draw_prob"],
-                        result["away_win_prob"],
-                        result["model_used"],
+                        result.get("prediction"),
+                        result.get("home_win_prob"),
+                        result.get("draw_prob"),
+                        result.get("away_win_prob"),
+                        result.get("model_used"),
+                        result.get("generated_at"),
                     ),
                 )
+                row = cur.fetchone()
+                return row["id"] if row else None
     finally:
         conn.close()
-
 
 
 def list_predictions(limit: int = 50):
@@ -81,16 +93,20 @@ def list_predictions(limit: int = 50):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT *
+                SELECT id, home_team, away_team, utc_date, prediction,
+                       home_win_prob, draw_prob, away_win_prob,
+                       model_used, generated_at
                 FROM predictions
                 ORDER BY generated_at DESC
-                LIMIT %s
+                LIMIT %s;
                 """,
                 (limit,),
             )
             return cur.fetchall()
     finally:
         conn.close()
+
+
 
 
 def get_recent_predictions(limit: int = 20):

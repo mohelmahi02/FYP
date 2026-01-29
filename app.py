@@ -108,12 +108,21 @@ def upcoming():
         home = match["homeTeam"]["name"]
         away = match["awayTeam"]["name"]
         utc_date = match.get("utcDate")
+        
 
         p = predict_match(model, finished, home, away)
         p["utc_date"] = utc_date
+        save_prediction(p)
         predictions.append(p)
 
     return jsonify({"count": len(predictions), "predictions": predictions})
+
+@app.get("/api/predictions")
+def predictions():
+    limit = request.args.get("limit", default=50, type=int)
+    limit = max(1, min(limit, 200))
+    rows = list_predictions(limit)
+    return jsonify({"count": len(rows), "predictions": rows})
 
 
 @app.get("/api/predict")
@@ -146,3 +155,5 @@ def predict():
     return jsonify(result)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+    
