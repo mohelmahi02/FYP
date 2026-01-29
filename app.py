@@ -11,6 +11,8 @@ from services.db_service import init_db, save_prediction, get_recent_predictions
 from services.model_service import get_model_bundle
 from services.db_service import init_db, save_prediction, list_predictions
 from services.feature_service import build_features
+from services.db_service import init_db
+
 
 
 
