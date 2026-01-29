@@ -9,6 +9,8 @@ import pandas as pd
 from services.model_service import get_model_bundle
 from services.db_service import init_db, save_prediction, get_recent_predictions
 from services.model_service import get_model_bundle
+from services.db_service import init_db, save_prediction, list_predictions
+from services.feature_service import build_features
 
 
 
@@ -49,55 +51,7 @@ def load_results():
         return pickle.load(f)
 
 
-def calculate_team_stats(matches, team_name):
-    goals_scored = 0
-    goals_conceded = 0
-    wins = 0
-    games_played = 0
 
-    for match in matches:
-        home_team = match["homeTeam"]["name"]
-        away_team = match["awayTeam"]["name"]
-        home_goals = match["score"]["fullTime"]["home"]
-        away_goals = match["score"]["fullTime"]["away"]
-
-        if home_goals is None or away_goals is None:
-            continue
-
-        if home_team == team_name:
-            goals_scored += home_goals
-            goals_conceded += away_goals
-            if home_goals > away_goals:
-                wins += 1
-            games_played += 1
-
-        elif away_team == team_name:
-            goals_scored += away_goals
-            goals_conceded += home_goals
-            if away_goals > home_goals:
-                wins += 1
-            games_played += 1
-
-    if games_played == 0:
-        return 0.0, 0.0, 0
-
-    return (goals_scored / games_played, goals_conceded / games_played, wins)
-
-
-def build_features(finished_matches, home_team, away_team):
-    home_stats = calculate_team_stats(finished_matches, home_team)
-    away_stats = calculate_team_stats(finished_matches, away_team)
-
-    return pd.DataFrame(
-        {
-            "home_goals_avg": [home_stats[0]],
-            "home_conceded_avg": [home_stats[1]],
-            "home_wins": [home_stats[2]],
-            "away_goals_avg": [away_stats[0]],
-            "away_conceded_avg": [away_stats[1]],
-            "away_wins": [away_stats[2]],
-        }
-    )
 
 
 def predict_match(model, finished_matches, home_team, away_team):
@@ -160,45 +114,33 @@ def upcoming():
     return jsonify({"count": len(predictions), "predictions": predictions})
 
 
-
 @app.get("/api/predict")
 def predict():
-    home = (request.args.get("home") or "").strip()
-    away = (request.args.get("away") or "").strip()
+    home = request.args.get("home")
+    away = request.args.get("away")
 
-    try:
-        bundle = get_model_bundle()
-        model = bundle["model"]
-        model_name = bundle["best_model_name"]
+    bundle = get_model_bundle()
+    model = bundle["model"]
+    model_name = bundle["best_model_name"]
 
-        finished = fetch_matches("FINISHED")
+    finished = fetch_matches("FINISHED")
+    X = build_features(finished, home, away)
 
-        X = build_features(finished, home, away)
+    pred_class = int(model.predict(X)[0])
+    probs = model.predict_proba(X)[0]
 
-        pred_class = int(model.predict(X)[0])
-        probs = model.predict_proba(X)[0]
+    result = {
+        "home_team": home,
+        "away_team": away,
+        "prediction": OUTCOME_NAMES[pred_class],
+        "home_win_prob": float(probs[2]),
+        "draw_prob": float(probs[1]),
+        "away_win_prob": float(probs[0]),
+        "model_used": model_name,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
-        
-        result = {
-            "home_team": home,
-            "away_team": away,
-            "prediction": OUTCOME_NAMES[pred_class],
-            "home_win_prob": float(probs[2]),
-            "draw_prob": float(probs[1]),
-            "away_win_prob": float(probs[0]),
-            "model_used": model_name,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        save_prediction(result)
-
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception:
-        return jsonify({"error": "Unexpected error while generating prediction"}), 500
-
+    save_prediction(result)
+    return jsonify(result)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

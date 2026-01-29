@@ -46,39 +46,51 @@ def init_db():
                 )
     finally:
         conn.close()
-def save_prediction(p: dict):
-    """
-    Expects keys:
-    home_team, away_team, utc_date, prediction,
-    home_win_prob, draw_prob, away_win_prob,
-    model_used, generated_at (optional)
-    """
+
+def save_prediction(row: dict):
     conn = get_conn()
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO predictions
-                    (home_team, away_team, utc_date, prediction,
-                     home_win_prob, draw_prob, away_win_prob, model_used, generated_at)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s, COALESCE(%s, NOW()))
-                    RETURNING id;
+                    INSERT INTO predictions (
+                        home_team, away_team, utc_date, prediction,
+                        home_win_prob, draw_prob, away_win_prob,
+                        model_used, generated_at
+                    )
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """,
                     (
-                        p["home_team"],
-                        p["away_team"],
-                        p.get("utc_date"),
-                        p["prediction"],
-                        p["home_win_prob"],
-                        p["draw_prob"],
-                        p["away_win_prob"],
-                        p["model_used"],
-                        p.get("generated_at"),
+                        row["home_team"],
+                        row["away_team"],
+                        row.get("utc_date"),
+                        row["prediction"],
+                        row["home_win_prob"],
+                        row["draw_prob"],
+                        row["away_win_prob"],
+                        row["model_used"],
+                        row.get("generated_at"),
                     ),
                 )
-                row = cur.fetchone()
-                return row["id"]
+    finally:
+        conn.close()
+
+
+def list_predictions(limit: int = 50):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM predictions
+                ORDER BY generated_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return cur.fetchall()
     finally:
         conn.close()
 
