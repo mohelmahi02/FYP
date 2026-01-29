@@ -47,34 +47,32 @@ def init_db():
     finally:
         conn.close()
 
-def save_prediction(row: dict):
+def save_prediction(result):
     conn = get_conn()
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO predictions (
-                        home_team, away_team, utc_date, prediction,
-                        home_win_prob, draw_prob, away_win_prob,
-                        model_used, generated_at
-                    )
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    INSERT INTO predictions
+                    (home_team, away_team, utc_date, prediction,
+                     home_win_prob, draw_prob, away_win_prob, model_used)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
                     """,
                     (
-                        row["home_team"],
-                        row["away_team"],
-                        row.get("utc_date"),
-                        row["prediction"],
-                        row["home_win_prob"],
-                        row["draw_prob"],
-                        row["away_win_prob"],
-                        row["model_used"],
-                        row.get("generated_at"),
+                        result["home_team"],
+                        result["away_team"],
+                        result.get("utc_date"),
+                        result["prediction"],
+                        result["home_win_prob"],
+                        result["draw_prob"],
+                        result["away_win_prob"],
+                        result["model_used"],
                     ),
                 )
     finally:
         conn.close()
+
 
 
 def list_predictions(limit: int = 50):
