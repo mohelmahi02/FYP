@@ -1,18 +1,18 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  postgres:
-    image: postgres:15
+  db:
+    image: postgres:16
     container_name: fyp_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: fyp_db
+      POSTGRES_DB: fyp
       POSTGRES_USER: fyp_user
-      POSTGRES_PASSWORD: fyp_password
+      POSTGRES_PASSWORD: fyp_pass
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  pgdata:

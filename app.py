@@ -7,9 +7,14 @@ import pickle
 import requests
 import pandas as pd
 from services.model_service import get_model_bundle
+from services.db_service import init_db, save_prediction, get_recent_predictions
+from services.model_service import get_model_bundle
+
 
 
 app = Flask(__name__)
+init_db()
+
 
 API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
 BASE_URL = "https://api.football-data.org/v4/competitions/PL/matches"
@@ -124,6 +129,14 @@ def models():
         return jsonify({"error": "model_results.pkl not found. Run train_model.py first."}), 404
     return jsonify(results)
 
+@app.get("/api/history")
+def history():
+    limit = request.args.get("limit", default=20, type=int)
+    limit = max(1, min(limit, 200))
+    rows = get_recent_predictions(limit)
+    return jsonify({"count": len(rows), "predictions": rows})
+
+
 
 @app.get("/api/upcoming")
 def upcoming():
@@ -147,16 +160,11 @@ def upcoming():
     return jsonify({"count": len(predictions), "predictions": predictions})
 
 
+
 @app.get("/api/predict")
 def predict():
     home = (request.args.get("home") or "").strip()
     away = (request.args.get("away") or "").strip()
-
-    if not home or not away:
-        return jsonify({"error": "Query parameters 'home' and 'away' are required"}), 400
-
-    if home.lower() == away.lower():
-        return jsonify({"error": "Home and away teams must be different"}), 400
 
     try:
         bundle = get_model_bundle()
@@ -166,22 +174,29 @@ def predict():
         finished = fetch_matches("FINISHED")
 
         X = build_features(finished, home, away)
+
         pred_class = int(model.predict(X)[0])
         probs = model.predict_proba(X)[0]
 
-        return jsonify({
+        
+        result = {
             "home_team": home,
             "away_team": away,
-            "prediction": OUTCOME_NAMES[pred_class],  # <-- must be OUTCOME_NAMES
+            "prediction": OUTCOME_NAMES[pred_class],
             "home_win_prob": float(probs[2]),
             "draw_prob": float(probs[1]),
             "away_win_prob": float(probs[0]),
             "model_used": model_name,
             "generated_at": datetime.now(timezone.utc).isoformat(),
-        })
+        }
 
-    except FileNotFoundError as e:
+        save_prediction(result)
+
+        return jsonify(result)
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception:

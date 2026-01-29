@@ -1,85 +1,101 @@
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from services.db_service import init_db
-init_db()
 
 
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "dbname": "fyp_db",
-    "user": "fyp_user",
-    "password": "fyp_password",
-}
+# Default local/dev connection 
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", "5432"))
+DB_NAME = os.getenv("DB_NAME", "fyp")
+DB_USER = os.getenv("DB_USER", "fyp_user")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "fyp_pass")
 
 
-def get_connection():
-    return psycopg2.connect(**DB_CONFIG)
+def get_conn():
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        cursor_factory=RealDictCursor,
+    )
 
 
 def init_db():
-    """Create tables if they do not exist."""
-    conn = get_connection()
-    cur = conn.cursor()
+    """Create tables if they don't exist."""
+    conn = get_conn()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS predictions (
+                        id SERIAL PRIMARY KEY,
+                        home_team TEXT NOT NULL,
+                        away_team TEXT NOT NULL,
+                        utc_date TEXT,
+                        prediction TEXT NOT NULL,
+                        home_win_prob DOUBLE PRECISION NOT NULL,
+                        draw_prob DOUBLE PRECISION NOT NULL,
+                        away_win_prob DOUBLE PRECISION NOT NULL,
+                        model_used TEXT NOT NULL,
+                        generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    );
+                    """
+                )
+    finally:
+        conn.close()
+def save_prediction(p: dict):
+    """
+    Expects keys:
+    home_team, away_team, utc_date, prediction,
+    home_win_prob, draw_prob, away_win_prob,
+    model_used, generated_at (optional)
+    """
+    conn = get_conn()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO predictions
+                    (home_team, away_team, utc_date, prediction,
+                     home_win_prob, draw_prob, away_win_prob, model_used, generated_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s, COALESCE(%s, NOW()))
+                    RETURNING id;
+                    """,
+                    (
+                        p["home_team"],
+                        p["away_team"],
+                        p.get("utc_date"),
+                        p["prediction"],
+                        p["home_win_prob"],
+                        p["draw_prob"],
+                        p["away_win_prob"],
+                        p["model_used"],
+                        p.get("generated_at"),
+                    ),
+                )
+                row = cur.fetchone()
+                return row["id"]
+    finally:
+        conn.close()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS predictions (
-            id SERIAL PRIMARY KEY,
-            home_team TEXT NOT NULL,
-            away_team TEXT NOT NULL,
-            prediction TEXT NOT NULL,
-            home_win_prob FLOAT,
-            draw_prob FLOAT,
-            away_win_prob FLOAT,
-            model_used TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
 
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def save_prediction(data: dict):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        INSERT INTO predictions (
-            home_team, away_team, prediction,
-            home_win_prob, draw_prob, away_win_prob,
-            model_used
-        )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """, (
-        data["home_team"],
-        data["away_team"],
-        data["prediction"],
-        data.get("home_win_prob"),
-        data.get("draw_prob"),
-        data.get("away_win_prob"),
-        data.get("model_used"),
-    ))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def get_prediction_history(limit=50):
-    conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    cur.execute("""
-        SELECT *
-        FROM predictions
-        ORDER BY created_at DESC
-        LIMIT %s
-    """, (limit,))
-
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+def get_recent_predictions(limit: int = 20):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM predictions
+                ORDER BY generated_at DESC
+                LIMIT %s;
+                """,
+                (limit,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
