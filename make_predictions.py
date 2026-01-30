@@ -1,80 +1,77 @@
+import os
+import pickle
 import requests
+import pandas as pd
 from datetime import datetime, timezone
 
-from services.feature_service import build_features
-from services.model_service import get_model_bundle
+from services.prediction_feature_service import build_prediction_features
+from services.form_service import add_form_features
 
-REAL_API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
+
+
+
+
+API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
 BASE_URL = "https://api.football-data.org/v4/competitions/PL/matches"
-HEADERS = {"X-Auth-Token": REAL_API_KEY}
+HEADERS = {"X-Auth-Token": API_KEY}
+
+MODEL_PATH = "models/logistic_regression.pkl"
 
 OUTCOME_NAMES = {0: "Away Win", 1: "Draw", 2: "Home Win"}
 
 
-def fetch_matches(status: str):
-    url = f"{BASE_URL}?status={status}"
-    r = requests.get(url, headers=HEADERS, timeout=30)
+
+
+print("Loading Kaggle dataset...")
+df_data = pd.read_csv("data/premier_league.csv")
+
+print("Adding form features...")
+df_data = add_form_features(df_data)
+
+
+print("Loading trained model...")
+with open(MODEL_PATH, "rb") as f:
+    model = pickle.load(f)
+
+
+def fetch_upcoming():
+    url = f"{BASE_URL}?status=SCHEDULED"
+    r = requests.get(url, headers=HEADERS)
     r.raise_for_status()
     return r.json()["matches"]
 
-def predict_upcoming(limit=20):
-    print("Loading saved model...")
-    bundle = get_model_bundle()
-    model = bundle["model"]
-    model_name = bundle["best_model_name"]
-    print("✓ Model loaded:", type(model).__name__, f"({model_name})")
 
-    print("Fetching finished matches for stats...")
-    finished_matches = fetch_matches("FINISHED")
-    print(f"✓ Finished matches: {len(finished_matches)}")
+print("\nFetching upcoming fixtures...")
+fixtures = fetch_upcoming()
 
-    print("Fetching scheduled matches...")
-    scheduled_matches = fetch_matches("SCHEDULED")
-    print(f"✓ Scheduled matches: {len(scheduled_matches)}")
+print("\nUPCOMING MATCH PREDICTIONS")
+print("=" * 50)
 
-    predictions = []
+for match in fixtures[:10]:
+    home = match["homeTeam"]["name"]
+    away = match["awayTeam"]["name"]
+    date = match["utcDate"]
 
-    for match in scheduled_matches[:limit]:
-        home_team = match["homeTeam"]["name"]
-        away_team = match["awayTeam"]["name"]
-        utc_date = match.get("utcDate")
 
-        # uses services.feature_service.build_features
-        X_new = build_features(finished_matches, home_team, away_team)
+    # Build feature row from Kaggle history
+    X = build_prediction_features(df_data, home, away)
 
-        pred_class = int(model.predict(X_new)[0])
-        probs = model.predict_proba(X_new)[0]
+    if X is None:
+        print(f"Skipping {home} vs {away} (not enough history)")
+        continue
 
-        predictions.append({
-            "home_team": home_team,
-            "away_team": away_team,
-            "utc_date": utc_date,
-            "prediction": OUTCOME_NAMES[pred_class],
-            "home_win_prob": float(probs[2]),
-            "draw_prob": float(probs[1]),
-            "away_win_prob": float(probs[0]),
-            "model_used": model_name,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-        })
+    pred_class = int(model.predict(X)[0])
+    probs = model.predict_proba(X)[0]
 
-    return predictions
+    
 
-if __name__ == "__main__":
-    preds = predict_upcoming(limit=10)
+    print(f"\n{home} vs {away}")
+    print("Date:", date)
+    print("Prediction:", OUTCOME_NAMES[pred_class])
+    print(
+        f"Confidence → Home: {probs[2]*100:.1f}% | "
+        f"Draw: {probs[1]*100:.1f}% | "
+        f"Away: {probs[0]*100:.1f}%"
 
-    print("\n" + "=" * 60)
-    print("UPCOMING MATCH PREDICTIONS (Top 10)")
-    print("=" * 60)
-
-    for p in preds:
-        print(f"\n{p['home_team']} vs {p['away_team']}")
-        print(f"Date (UTC): {p['utc_date']}")
-        print(f"Prediction: {p['prediction']}")
-        print(
-            f"Confidence -> Home: {p['home_win_prob']*100:.1f}% | "
-            f"Draw: {p['draw_prob']*100:.1f}% | "
-            f"Away: {p['away_win_prob']*100:.1f}%"
-        )
-
-    print("\n" + "=" * 60)
-
+        
+    )
