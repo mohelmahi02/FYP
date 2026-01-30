@@ -17,49 +17,46 @@ FEATURE_COLUMNS = [
 
 def build_prediction_features(df, home_team, away_team):
     """
-    Builds a feature row for prediction.
-    If a team has no history, fallback to league averages.
+    Build a single feature row for prediction.
+    Always returns something (uses league averages if team has no history).
     """
 
-    #  League fallback averages 
+    # League-wide averages (fallback)
     league_avg = df[FEATURE_COLUMNS].mean()
 
-    #  Team history 
-    home_matches = df[(df["HomeTeam"] == home_team) | (df["AwayTeam"] == home_team)]
-    away_matches = df[(df["HomeTeam"] == away_team) | (df["AwayTeam"] == away_team)]
+    # Match history for each team
+    home_matches = df[
+        (df["HomeTeam"] == home_team) | (df["AwayTeam"] == home_team)
+    ].tail(10)
 
-    #  If missing team history, fallback 
-    if len(home_matches) < 5:
-        print(f" No history for {home_team}, using league averages")
+    away_matches = df[
+        (df["HomeTeam"] == away_team) | (df["AwayTeam"] == away_team)
+    ].tail(10)
 
-    if len(away_matches) < 5:
-        print(f" No history for {away_team}, using league averages")
+   
+    if home_matches.empty:
+        home_stats = league_avg
+    else:
+        home_stats = home_matches[FEATURE_COLUMNS].mean()
 
-    
-    features = {
-        "HomeTeamShots": home_matches["HomeTeamShots"].mean() if len(home_matches) > 0 else league_avg["HomeTeamShots"],
-        "AwayTeamShots": away_matches["AwayTeamShots"].mean() if len(away_matches) > 0 else league_avg["AwayTeamShots"],
+    if away_matches.empty:
+        away_stats = league_avg
+    else:
+        away_stats = away_matches[FEATURE_COLUMNS].mean()
 
-        "HomeTeamShotsOnTarget": home_matches["HomeTeamShotsOnTarget"].mean()
-        if len(home_matches) > 0 else league_avg["HomeTeamShotsOnTarget"],
-
-        "AwayTeamShotsOnTarget": away_matches["AwayTeamShotsOnTarget"].mean()
-        if len(away_matches) > 0 else league_avg["AwayTeamShotsOnTarget"],
-
-        "HomeTeamCorners": home_matches["HomeTeamCorners"].mean()
-        if len(home_matches) > 0 else league_avg["HomeTeamCorners"],
-
-        "AwayTeamCorners": away_matches["AwayTeamCorners"].mean()
-        if len(away_matches) > 0 else league_avg["AwayTeamCorners"],
-
-        # Odds fallback
-        "B365HomeTeam": league_avg["B365HomeTeam"],
-        "B365Draw": league_avg["B365Draw"],
-        "B365AwayTeam": league_avg["B365AwayTeam"],
-
-        # Form fallback
-        "HomeForm5": home_matches["HomeForm5"].iloc[-1] if len(home_matches) > 0 else league_avg["HomeForm5"],
-        "AwayForm5": away_matches["AwayForm5"].iloc[-1] if len(away_matches) > 0 else league_avg["AwayForm5"],
+    # Build final row
+    row = {
+        "HomeTeamShots": home_stats["HomeTeamShots"],
+        "AwayTeamShots": away_stats["AwayTeamShots"],
+        "HomeTeamShotsOnTarget": home_stats["HomeTeamShotsOnTarget"],
+        "AwayTeamShotsOnTarget": away_stats["AwayTeamShotsOnTarget"],
+        "HomeTeamCorners": home_stats["HomeTeamCorners"],
+        "AwayTeamCorners": away_stats["AwayTeamCorners"],
+        "B365HomeTeam": home_stats["B365HomeTeam"],
+        "B365Draw": home_stats["B365Draw"],
+        "B365AwayTeam": away_stats["B365AwayTeam"],
+        "HomeForm5": home_stats["HomeForm5"],
+        "AwayForm5": away_stats["AwayForm5"],
     }
 
-    return pd.DataFrame([features])
+    return pd.DataFrame([row])
