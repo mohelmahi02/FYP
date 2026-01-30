@@ -126,26 +126,48 @@ print("\n===============================")
 print("FEATURE IMPORTANCE COMPARISON")
 print("===============================")
 
-# Random Forest
-print("\nRandom Forest:")
-print(pd.DataFrame({
+
+# Random Forest 
+rf_importance = pd.DataFrame({
     "feature": FEATURE_COLUMNS,
     "importance": rf_model.feature_importances_
-}).sort_values("importance", ascending=False))
+}).sort_values("importance", ascending=False)
 
-# Decision Tree
-print("\nDecision Tree:")
-print(pd.DataFrame({
+rf_importance = rf_importance.reset_index(drop=True)
+rf_importance.index += 1
+
+print("\nRandom Forest (Most Important First):")
+print(rf_importance)
+
+
+
+# Decision Tree 
+dt_importance = pd.DataFrame({
     "feature": FEATURE_COLUMNS,
     "importance": dt_model.feature_importances_
-}).sort_values("importance", ascending=False))
+}).sort_values("importance", ascending=False)
 
-# Logistic Regression
-print("\nLogistic Regression:")
-print(pd.DataFrame({
+dt_importance = dt_importance.reset_index(drop=True)
+dt_importance.index += 1
+
+print("\nDecision Tree (Most Important First):")
+print(dt_importance)
+
+
+
+# Logistic Regression 
+
+lr_importance = pd.DataFrame({
     "feature": FEATURE_COLUMNS,
-    "coefficient": lr_model.coef_[0]
-}).sort_values("coefficient", ascending=False))
+    "coefficient": lr_model.coef_[0],
+    "importance": abs(lr_model.coef_[0])
+}).sort_values("importance", ascending=False)
+
+lr_importance = lr_importance.reset_index(drop=True)
+lr_importance.index += 1
+
+print("\nLogistic Regression (Most Important First):")
+print(lr_importance[["feature", "coefficient"]])
 
 
 #Model Comparison
