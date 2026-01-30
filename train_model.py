@@ -75,15 +75,39 @@ lr_acc = accuracy_score(y_test, lr_preds)
 
 print("Logistic Regression Accuracy:", lr_acc)
 
+print("\n===============================")
+print("FEATURE IMPORTANCE COMPARISON")
+print("===============================")
+
+# Random Forest
+print("\nRandom Forest:")
+print(pd.DataFrame({
+    "feature": FEATURE_COLUMNS,
+    "importance": rf_model.feature_importances_
+}).sort_values("importance", ascending=False))
+
+# Decision Tree
+print("\nDecision Tree:")
+print(pd.DataFrame({
+    "feature": FEATURE_COLUMNS,
+    "importance": dt_model.feature_importances_
+}).sort_values("importance", ascending=False))
+
+# Logistic Regression
+print("\nLogistic Regression:")
+print(pd.DataFrame({
+    "feature": FEATURE_COLUMNS,
+    "coefficient": lr_model.coef_[0]
+}).sort_values("coefficient", ascending=False))
 
 
 #Model Comparison
 print("\n===============================")
 print("MODEL COMPARISON")
 print("===============================")
-print("Random Forest:", rf_acc)
-print("Decision Tree:", dt_acc)
-print("Logistic Regression:", lr_acc)
+print(f"\nRandom Forest Accuracy: {rf_acc * 100:.2f}%")
+print(f"Decision Tree Accuracy: {dt_acc * 100:.2f}%")
+print(f"Logistic Regression Accuracy: {lr_acc * 100:.2f}%")
 print("===============================")
 
 # Best model
