@@ -1,226 +1,104 @@
-#train random forest model
-
-import os 
+import os
 import pickle
-import requests
-import numpy as np
 import pandas as pd
+
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from services.feature_service import build_features
-
-
-# real football-data.org API
-API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
-API_URL = "https://api.football-data.org/v4/competitions/PL/matches"
-
-headers = {"X-Auth-Token": API_KEY}
-response = requests.get(API_URL, headers=headers)
-data = response.json()
-
-print(f"Fetched {len(data['matches'])} matches from API")
-
-matches = data['matches']
-
-def get_match_outcome(home_goals, away_goals):
-    """
-    Encode match outcome:
-    2 = Home Win
-    1 = Draw
-    0 = Away Win
-    """
-    if home_goals > away_goals:
-        return 2
-    elif home_goals == away_goals:
-        return 1
-    else:
-        return 0
-
-
-
-
-
-# build training data
-print("Building training data...")
-training_data = []
-
-for i, match in enumerate(matches):
-    home_team = match["homeTeam"]["name"]
-    away_team = match["awayTeam"]["name"]
-    home_goals = match["score"]["fullTime"]["home"]
-    away_goals = match["score"]["fullTime"]["away"]
-
-    if home_goals is None or away_goals is None:
-        continue
-
-    previous_matches = matches[:i]
-
-    if len(previous_matches) < 5:
-        continue
-
-    X_row = build_features(previous_matches, home_team, away_team)
-    X_row["outcome"] = get_match_outcome(home_goals, away_goals)
-
-    training_data.append(X_row.iloc[0].to_dict())
-
-
-
-
-
-
-df = pd.DataFrame(training_data)
-print(f" Training samples: {len(df)}")
-
-# Random forest model
-print("\n Training Random Forest model...")
-
-# Separate features (X) from outcome (y)
-X = df.drop('outcome', axis=1)
-y = df['outcome']
-
-# Split into training and testing sets
-split_idx = int(len(df) * 0.8)
-
-X_train = X.iloc[:split_idx]
-y_train = y.iloc[:split_idx]
-
-X_test = X.iloc[split_idx:]
-y_test = y.iloc[split_idx:]
-
-
-print(f" Training set: {len(X_train)} matches")
-print(f" Testing set: {len(X_test)} matches")
-
-print("\nTrain outcome distribution:")
-print(y_train.value_counts(normalize=True))
-
-print("\nTest outcome distribution:")
-print(y_test.value_counts(normalize=True))
-
-
-# Majority-class baseline: always predict the most common class in y_train
-majority_class = int(y_train.value_counts().idxmax())
-majority_preds = np.full(shape=len(y_test), fill_value=majority_class)
-majority_acc = accuracy_score(y_test, majority_preds)
-
-# Random-weighted baseline: sample using class distribution from y_train
-class_probs = (y_train.value_counts(normalize=True)
-               .reindex([0, 1, 2], fill_value=0.0)
-               .values)
-
-rng = np.random.default_rng(42)
-random_preds = rng.choice([0, 1, 2], size=len(y_test), p=class_probs)
-random_acc = accuracy_score(y_test, random_preds)
-
-print("\n" + "="*50)
-print("BASELINE RESULTS (time-based test set)")
-print("="*50)
-print(f"Majority-class baseline: {majority_acc * 100:.2f}% (predicts class {majority_class} always)")
-print(f"Random-weighted baseline: {random_acc * 100:.2f}% (based on train distribution)")
-print("="*50 + "\n")
-
-
-
-# Create Random Forest with 100 trees
-model = RandomForestClassifier(n_estimators=200, random_state=42,class_weight="balanced")
-
-# Train the model
-model.fit(X_train, y_train)
-
-print(" Model trained!")
-
-# Calculate accuracy
-predictions = model.predict(X_test) 
-accuracy = accuracy_score(y_test, predictions)
-
-print(f" Model Accuracy: {accuracy * 100:.2f}%")
-print(f"   ({int(accuracy * len(X_test))}/{len(X_test)} correct predictions)")
-
-#  feature importance
-print("\n Feature Importance:")
-importance = pd.DataFrame({
-    'feature': X.columns,
-    'importance': model.feature_importances_
-}).sort_values('importance', ascending=False)
-
-for idx, row in importance.iterrows():
-    print(f"   {row['feature']:20s} {row['importance']*100:5.1f}%")
-
-
-
-# Decision Tree Model
-
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-print("\n Training Decision Tree model...")
+#Load Data
+df = pd.read_csv("data/premier_league.csv")
+print("Total matches:", len(df))
 
-# Create Decision Tree
-dt_model = DecisionTreeClassifier(random_state=42, class_weight="balanced")
+#Target Variable
+OUTCOME_MAP = {"A": 0, "D": 1, "H": 2}
+df = df.dropna(subset=["FullTimeResult"])
+df["outcome"] = df["FullTimeResult"].map(OUTCOME_MAP)
 
-# Train the model
+#Feature Columns
+FEATURE_COLUMNS = [
+    "HomeTeamShots",
+    "AwayTeamShots",
+    "HomeTeamShotsOnTarget",
+    "AwayTeamShotsOnTarget",
+    "HomeTeamCorners",
+    "AwayTeamCorners",
+
+    # Betting Odds (strong predictors)
+    "B365HomeTeam",
+    "B365Draw",
+    "B365AwayTeam",
+]
+
+# Drop missing rows
+df = df.dropna(subset=FEATURE_COLUMNS)
+
+#Train-test split
+train_df = df[df["Season"] < "2023-2024"]
+test_df  = df[df["Season"] >= "2023-2024"]
+
+X_train = train_df[FEATURE_COLUMNS]
+y_train = train_df["outcome"]
+
+X_test = test_df[FEATURE_COLUMNS]
+y_test = test_df["outcome"]
+
+print("Training matches:", len(X_train))
+print("Testing matches:", len(X_test))
+
+#random forest
+rf_model = RandomForestClassifier(n_estimators=200, random_state=42)
+rf_model.fit(X_train, y_train)
+
+rf_preds = rf_model.predict(X_test)
+rf_acc = accuracy_score(y_test, rf_preds)
+
+print("\nRandom Forest Accuracy:", rf_acc)
+
+
+#Decision Tree
+dt_model = DecisionTreeClassifier(random_state=42)
 dt_model.fit(X_train, y_train)
 
-print(" Model trained!")
+dt_preds = dt_model.predict(X_test)
+dt_acc = accuracy_score(y_test, dt_preds)
 
-# Calculate accuracy
-dt_predictions = dt_model.predict(X_test)
-dt_accuracy = accuracy_score(y_test, dt_predictions)
+print("Decision Tree Accuracy:", dt_acc)
 
-print(f" Model Accuracy: {dt_accuracy * 100:.2f}%")
-print(f"   ({int(dt_accuracy * len(X_test))}/{len(X_test)} correct predictions)")
-
-
-
-# Logistic Regression Model
-
-from sklearn.linear_model import LogisticRegression
-
-print("\n Training Logistic Regression model...")
-
-# Create Logistic Regression
-lr_model = LogisticRegression(random_state=42, max_iter=2000, class_weight="balanced")
-# Train the model
+#Logistic Regression
+lr_model = LogisticRegression(max_iter=2000)
 lr_model.fit(X_train, y_train)
 
-print(" Model trained!")
+lr_preds = lr_model.predict(X_test)
+lr_acc = accuracy_score(y_test, lr_preds)
 
-# Calculate accuracy
-lr_predictions = lr_model.predict(X_test)
-lr_accuracy = accuracy_score(y_test, lr_predictions)
-
-print(f" Model Accuracy: {lr_accuracy * 100:.2f}%")
-print(f"   ({int(lr_accuracy * len(X_test))}/{len(X_test)} correct predictions)")
+print("Logistic Regression Accuracy:", lr_acc)
 
 
 
-# Model comparison
+#Model Comparison
+print("\n===============================")
+print("MODEL COMPARISON")
+print("===============================")
+print("Random Forest:", rf_acc)
+print("Decision Tree:", dt_acc)
+print("Logistic Regression:", lr_acc)
+print("===============================")
 
-print("\n" + "="*50)
-print("MODEL COMPARISON RESULTS")
-print("="*50)
-print(f"Random Forest:        {accuracy * 100:.2f}%")
-print(f"Decision Tree:        {dt_accuracy * 100:.2f}%")
-print(f"Logistic Regression:  {lr_accuracy * 100:.2f}%")
-print("="*50)
+# Best model
+best_model = max(
+    {"Random Forest": rf_acc, "Decision Tree": dt_acc, "Logistic Regression": lr_acc},
+    key=lambda x: {"Random Forest": rf_acc, "Decision Tree": dt_acc, "Logistic Regression": lr_acc}[x]
+)
 
-# Determine best model
-models = {
-    'Random Forest': accuracy,
-    'Decision Tree': dt_accuracy,
-    'Logistic Regression': lr_accuracy
-}
-best_model = max(models, key=models.get)
-print(f"\n Best performing model: {best_model} ({models[best_model] * 100:.2f}%)")
+print("Best Model:", best_model)
 
-print("\nSaving trained models...")
-
-# create folder if not exists
+#Save models
 os.makedirs("models", exist_ok=True)
 
-# Save each model
 with open("models/random_forest.pkl", "wb") as f:
-    pickle.dump(model, f)
+    pickle.dump(rf_model, f)
 
 with open("models/decision_tree.pkl", "wb") as f:
     pickle.dump(dt_model, f)
@@ -228,15 +106,11 @@ with open("models/decision_tree.pkl", "wb") as f:
 with open("models/logistic_regression.pkl", "wb") as f:
     pickle.dump(lr_model, f)
 
-
-rf_accuracy = accuracy_score(y_test, model.predict(X_test))
-dt_accuracy = accuracy_score(y_test, dt_model.predict(X_test))
-lr_accuracy = accuracy_score(y_test, lr_model.predict(X_test))
-# Save results / best model info
+# Save results
 model_results = {
-    "random_forest": accuracy,
-    "decision_tree": dt_accuracy,
-    "logistic_regression": lr_accuracy,
+    "random_forest": rf_acc,
+    "decision_tree": dt_acc,
+    "logistic_regression": lr_acc,
     "best_model": best_model,
     "num_samples": len(df)
 }
@@ -244,7 +118,4 @@ model_results = {
 with open("models/model_results.pkl", "wb") as f:
     pickle.dump(model_results, f)
 
-print(" Saved: models/random_forest.pkl")
-print(" Saved: models/decision_tree.pkl")
-print(" Saved: models/logistic_regression.pkl")
-print(" Saved: models/model_results.pkl")
+print("\nModels saved successfully into /models/")
