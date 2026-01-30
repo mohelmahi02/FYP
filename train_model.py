@@ -16,6 +16,48 @@ OUTCOME_MAP = {"A": 0, "D": 1, "H": 2}
 df = df.dropna(subset=["FullTimeResult"])
 df["outcome"] = df["FullTimeResult"].map(OUTCOME_MAP)
 
+print("Adding fast form features...")
+
+# Sort by date first
+df["Date"] = pd.to_datetime(df["Date"])
+df = df.sort_values("Date")
+
+# Store last results per team
+team_history = {}
+
+home_forms = []
+away_forms = []
+
+for _, row in df.iterrows():
+    home = row["HomeTeam"]
+    away = row["AwayTeam"]
+
+    # Get last 5 games form points
+    home_form = sum(team_history.get(home, [])[-5:])
+    away_form = sum(team_history.get(away, [])[-5:])
+
+    home_forms.append(home_form)
+    away_forms.append(away_form)
+
+    # Update history AFTER computing form
+    result = row["FullTimeResult"]
+
+    if result == "H":
+        team_history.setdefault(home, []).append(3)
+        team_history.setdefault(away, []).append(0)
+
+    elif result == "A":
+        team_history.setdefault(home, []).append(0)
+        team_history.setdefault(away, []).append(3)
+
+    else:  # Draw
+        team_history.setdefault(home, []).append(1)
+        team_history.setdefault(away, []).append(1)
+
+# Assign columns
+df["HomeForm5"] = home_forms
+df["AwayForm5"] = away_forms
+
 #Feature Columns
 FEATURE_COLUMNS = [
     "HomeTeamShots",
@@ -29,7 +71,12 @@ FEATURE_COLUMNS = [
     "B365HomeTeam",
     "B365Draw",
     "B365AwayTeam",
+     #Home/away form features
+     "HomeForm5",
+    "AwayForm5",
 ]
+
+
 
 # Drop missing rows
 df = df.dropna(subset=FEATURE_COLUMNS)
