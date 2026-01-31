@@ -3,53 +3,38 @@ import pandas as pd
 
 def add_form_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds fast rolling form features:
-    HomeForm5 and AwayForm5
+    Adds HomeTeamPoints and AwayTeamPoints based on match result.
 
-    Form points:
-    Win = 3
-    Draw = 1
-    Loss = 0
+    Works for BOTH:
+    - Kaggle dataset (FullTimeResult)
+    - Football-Data E0.csv dataset (FTR)
     """
 
-    print("Computing rolling form features...")
+    # Detect correct result column
+    if "FullTimeResult" in df.columns:
+        result_col = "FullTimeResult"
+    elif "FTR" in df.columns:
+        result_col = "FTR"
+    else:
+        raise ValueError("No result column found (FullTimeResult or FTR)")
 
-    # Convert Date column
-    df["Date"] = pd.to_datetime(df["Date"])
-    df = df.sort_values("Date")
-
-    team_history = {}
-    home_forms = []
-    away_forms = []
+    home_points = []
+    away_points = []
 
     for _, row in df.iterrows():
-        home = row["HomeTeam"]
-        away = row["AwayTeam"]
-
-        # Last 5 matches points
-        home_form = sum(team_history.get(home, [])[-5:])
-        away_form = sum(team_history.get(away, [])[-5:])
-
-        home_forms.append(home_form)
-        away_forms.append(away_form)
-
-        # Update team history after match result
-        result = row["FullTimeResult"]
+        result = row[result_col]
 
         if result == "H":
-            team_history.setdefault(home, []).append(3)
-            team_history.setdefault(away, []).append(0)
-
+            home_points.append(3)
+            away_points.append(0)
         elif result == "A":
-            team_history.setdefault(home, []).append(0)
-            team_history.setdefault(away, []).append(3)
+            home_points.append(0)
+            away_points.append(3)
+        else:
+            home_points.append(1)
+            away_points.append(1)
 
-        else:  # Draw
-            team_history.setdefault(home, []).append(1)
-            team_history.setdefault(away, []).append(1)
-
-    # Add new columns
-    df["HomeForm5"] = home_forms
-    df["AwayForm5"] = away_forms
+    df["HomeTeamPoints"] = home_points
+    df["AwayTeamPoints"] = away_points
 
     return df

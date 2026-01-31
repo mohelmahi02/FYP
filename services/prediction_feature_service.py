@@ -1,62 +1,65 @@
 import pandas as pd
 
+
 FEATURE_COLUMNS = [
-    "HomeTeamShots",
-    "AwayTeamShots",
-    "HomeTeamShotsOnTarget",
-    "AwayTeamShotsOnTarget",
-    "HomeTeamCorners",
-    "AwayTeamCorners",
-    "B365HomeTeam",
-    "B365Draw",
-    "B365AwayTeam",
     "HomeForm5",
     "AwayForm5",
+    "HomeGoalsAvg",
+    "AwayGoalsAvg",
+    "HomeGoalDiff",
+    "AwayGoalDiff"
 ]
 
+TEAM_NAME_MAP = {
+    "Spurs": "Tottenham",
+    "Man City": "Man City",
+    "Man Utd": "Man United",
+    "Nott'm Forest": "Nott'm Forest",
+    "Wolves": "Wolves",
+}
 
-def build_prediction_features(df, home_team, away_team):
+
+def build_prediction_features(df, home, away):
     """
-    Build a single feature row for prediction.
-    Always returns something (uses league averages if team has no history).
+    Build prediction feature vector using last 5 games of each team.
+    Compatible with E0.csv column names.
     """
 
-    # League-wide averages (fallback)
-    league_avg = df[FEATURE_COLUMNS].mean()
+    # Normalize team names
+    home = TEAM_NAME_MAP.get(home, home)
+    away = TEAM_NAME_MAP.get(away, away)
 
-    # Match history for each team
-    home_matches = df[
-        (df["HomeTeam"] == home_team) | (df["AwayTeam"] == home_team)
-    ].tail(10)
+    # Last 5 home matches
+    home_matches = df[df["HomeTeam"] == home].tail(5)
 
-    away_matches = df[
-        (df["HomeTeam"] == away_team) | (df["AwayTeam"] == away_team)
-    ].tail(10)
+    # Last 5 away matches
+    away_matches = df[df["AwayTeam"] == away].tail(5)
 
-   
-    if home_matches.empty:
-        home_stats = league_avg
-    else:
-        home_stats = home_matches[FEATURE_COLUMNS].mean()
+    # If not enough history → still allow prediction
+    if len(home_matches) < 3 or len(away_matches) < 3:
+        return None
 
-    if away_matches.empty:
-        away_stats = league_avg
-    else:
-        away_stats = away_matches[FEATURE_COLUMNS].mean()
+    # Goals scored
+    home_goals_avg = home_matches["FTHG"].mean()
+    away_goals_avg = away_matches["FTAG"].mean()
 
-    # Build final row
-    row = {
-        "HomeTeamShots": home_stats["HomeTeamShots"],
-        "AwayTeamShots": away_stats["AwayTeamShots"],
-        "HomeTeamShotsOnTarget": home_stats["HomeTeamShotsOnTarget"],
-        "AwayTeamShotsOnTarget": away_stats["AwayTeamShotsOnTarget"],
-        "HomeTeamCorners": home_stats["HomeTeamCorners"],
-        "AwayTeamCorners": away_stats["AwayTeamCorners"],
-        "B365HomeTeam": home_stats["B365HomeTeam"],
-        "B365Draw": home_stats["B365Draw"],
-        "B365AwayTeam": away_stats["B365AwayTeam"],
-        "HomeForm5": home_stats["HomeForm5"],
-        "AwayForm5": away_stats["AwayForm5"],
-    }
+    # Goals conceded
+    home_conceded_avg = home_matches["FTAG"].mean()
+    away_conceded_avg = away_matches["FTHG"].mean()
 
-    return pd.DataFrame([row])
+    # Goal differences
+    home_goal_diff = home_goals_avg - home_conceded_avg
+    away_goal_diff = away_goals_avg - away_conceded_avg
+
+    # Form points
+    home_form = home_matches["HomeTeamPoints"].sum()
+    away_form = away_matches["AwayTeamPoints"].sum()
+
+    return pd.DataFrame([{
+        "HomeForm5": home_form,
+        "AwayForm5": away_form,
+        "HomeGoalsAvg": home_goals_avg,
+        "AwayGoalsAvg": away_goals_avg,
+        "HomeGoalDiff": home_goal_diff,
+        "AwayGoalDiff": away_goal_diff
+    }])[FEATURE_COLUMNS]

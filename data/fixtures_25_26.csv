@@ -1,0 +1,32 @@
+import pandas as pd
+
+# FBRef fixtures page
+url = "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures"
+
+print("Downloading fixtures from FBRef...")
+tables = pd.read_html(url)
+
+df = tables[0]
+
+# Keep only fixture rows (no results yet)
+df = df[["Wk", "Date", "Home", "Away"]]
+
+# Convert week to numeric
+df["Wk"] = pd.to_numeric(df["Wk"], errors="coerce")
+
+# Filter GW24–GW38
+df = df[(df["Wk"] >= 24) & (df["Wk"] <= 38)]
+
+# Rename columns for your project
+df = df.rename(columns={
+    "Wk": "Gameweek",
+    "Home": "HomeTeam",
+    "Away": "AwayTeam"
+})
+
+# Save CSV
+output_path = "data/fixtures_25_26_gw24_38.csv"
+df.to_csv(output_path, index=False)
+
+print(" Fixtures saved to:", output_path)
+print(df.head())

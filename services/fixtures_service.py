@@ -1,32 +1,28 @@
-import requests
-
-API_KEY = "73dfd402f27440d4aff1f6d50185fb3a"
-BASE_URL = "https://api.football-data.org/v4/competitions/PL/matches"
-HEADERS = {"X-Auth-Token": API_KEY}
+import pandas as pd
 
 
-def fetch_scheduled_matches():
-    """Fetch all upcoming Premier League fixtures"""
-    url = f"{BASE_URL}?status=SCHEDULED"
-    r = requests.get(url, headers=HEADERS)
-    r.raise_for_status()
-    return r.json()["matches"]
+# Load Fixtures from CSV
+def load_fixtures(path):
+    df = pd.read_csv(path)
+
+    # Convert Date column properly
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+
+    return df
 
 
-def get_next_matchweek(fixtures):
-    """
-    Return all fixtures from the next matchday (full matchweek)
-    """
 
-    if not fixtures:
-        return []
+# Get Next Matchweek
 
-    fixtures = sorted(fixtures, key=lambda x: x["utcDate"])
+def get_next_matchweek(fixtures_df):
 
-    # Matchday number of the first upcoming fixture
-    next_matchday = fixtures[0]["matchday"]
+    if fixtures_df.empty:
+        return fixtures_df
 
-    # Return all fixtures with that matchday number
-    matchweek = [m for m in fixtures if m["matchday"] == next_matchday]
+    # Find the smallest upcoming gameweek
+    next_gw = fixtures_df["Gameweek"].min()
 
-    return matchweek
+    print(f"Next Gameweek Detected: {next_gw}")
+
+    # Return all matches in that gameweek
+    return fixtures_df[fixtures_df["Gameweek"] == next_gw]

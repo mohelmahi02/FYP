@@ -17,6 +17,31 @@ df = df.dropna(subset=["FullTimeResult"])
 df["outcome"] = df["FullTimeResult"].map(OUTCOME_MAP)
 
 print("Adding fast form features...")
+print("Adding goal strength features...")
+
+df["HomeGoalsAvg"] = (
+    df.groupby("HomeTeam")["FullTimeHomeTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["AwayGoalsAvg"] = (
+    df.groupby("AwayTeam")["FullTimeAwayTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["HomeConcededAvg"] = (
+    df.groupby("HomeTeam")["FullTimeAwayTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["AwayConcededAvg"] = (
+    df.groupby("AwayTeam")["FullTimeHomeTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["HomeGoalDiff"] = df["HomeGoalsAvg"] - df["HomeConcededAvg"]
+df["AwayGoalDiff"] = df["AwayGoalsAvg"] - df["AwayConcededAvg"]
+
 
 # Sort by date first
 df["Date"] = pd.to_datetime(df["Date"])
@@ -60,21 +85,14 @@ df["AwayForm5"] = away_forms
 
 #Feature Columns
 FEATURE_COLUMNS = [
-    "HomeTeamShots",
-    "AwayTeamShots",
-    "HomeTeamShotsOnTarget",
-    "AwayTeamShotsOnTarget",
-    "HomeTeamCorners",
-    "AwayTeamCorners",
-
-    # Betting Odds (strong predictors)
-    "B365HomeTeam",
-    "B365Draw",
-    "B365AwayTeam",
-     #Home/away form features
-     "HomeForm5",
+    "HomeForm5",
     "AwayForm5",
+    "HomeGoalsAvg",
+    "AwayGoalsAvg",
+    "HomeGoalDiff",
+    "AwayGoalDiff"
 ]
+
 
 
 
