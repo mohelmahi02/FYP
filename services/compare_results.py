@@ -1,5 +1,7 @@
 from services.results_service import fetch_finished_matches, extract_result,extract_score
 from services.db_service import get_recent_predictions, update_prediction_result
+from services.evaluation_service import compute_accuracy
+
 
 print("Fetching finished matches from API...")
 finished = fetch_finished_matches()
@@ -53,3 +55,8 @@ for match in finished:
     updated += 1
 
 print(f"Updated {updated} predictions")
+
+accuracy, correct, total = compute_accuracy()
+
+print(f"\nModel accuracy: {accuracy}%")
+print(f"Correct predictions: {correct}/{total}")
