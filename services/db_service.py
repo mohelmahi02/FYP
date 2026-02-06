@@ -3,6 +3,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 
+
+
 # Default local/dev connection 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
@@ -30,17 +32,21 @@ def init_db():
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    CREATE TABLE IF NOT EXISTS predictions (
-                        id SERIAL PRIMARY KEY,
-                        home_team TEXT NOT NULL,
-                        away_team TEXT NOT NULL,
-                        utc_date TEXT,
-                        prediction TEXT NOT NULL,
-                        home_win_prob DOUBLE PRECISION NOT NULL,
-                        draw_prob DOUBLE PRECISION NOT NULL,
-                        away_win_prob DOUBLE PRECISION NOT NULL,
-                        model_used TEXT NOT NULL,
-                        generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                 CREATE TABLE predictions (
+    id SERIAL PRIMARY KEY,
+    home_team TEXT,
+    away_team TEXT,
+    utc_date TIMESTAMPTZ,
+    prediction TEXT,
+    home_win_prob DOUBLE PRECISION,
+    draw_prob DOUBLE PRECISION,
+    away_win_prob DOUBLE PRECISION,
+    actual_result TEXT,
+    correct BOOLEAN,
+    model_used TEXT,
+    generated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
                     );
                     """
                 )
@@ -116,3 +122,45 @@ def get_recent_predictions(limit: int = 20):
             return cur.fetchall()
     finally:
         conn.close()
+
+
+def update_prediction_result(
+    home_team,
+    away_team,
+    utc_date,
+    actual_result,
+    home_goals,
+    away_goals,
+    correct
+):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE predictions
+        SET
+            actual_result = %s,
+            home_goals = %s,
+            away_goals = %s,
+            correct = %s
+        WHERE
+            home_team = %s
+            AND away_team = %s
+            AND utc_date = %s
+        """,
+        (
+            actual_result,
+            home_goals,
+            away_goals,
+            correct,
+            home_team,
+            away_team,
+            utc_date
+        )
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+

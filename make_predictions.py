@@ -18,6 +18,8 @@ OUTCOME_NAMES = {
     2: "Home Win"
 }
 
+CURRENT_GAMEWEEK = 25
+
 
 print("\nInitializing PostgreSQL...")
 init_db()
@@ -36,14 +38,22 @@ print("\nLoading fixtures CSV...")
 fixtures_df = load_fixtures(FIXTURES_FILE)
 
 print("\nSelecting next matchweek only...")
-next_week = get_next_matchweek(fixtures_df)
+next_week = get_next_matchweek(fixtures_df,df_data)
+next_week_fixtures = fixtures_df[fixtures_df["Gameweek"] == CURRENT_GAMEWEEK]
+
+print("Last played match date:", df_data["Date"].max())
+
+if next_week is None:
+    print("No upcoming matchweek found in fixtures.")
+    exit()
+    next_week = fixtures_df[fixtures_df["Gameweek"] == next_gw]
 
 print("\nUPCOMING MATCHWEEK PREDICTIONS")
 print("=" * 60)
 
 saved = 0
 
-for _, match in next_week.iterrows():
+for _, match in next_week_fixtures.iterrows():
     home = match["HomeTeam"]
     away = match["AwayTeam"]
     date = match["Date"]
