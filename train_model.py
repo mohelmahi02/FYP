@@ -7,8 +7,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
+
 #Load Data
 df = pd.read_csv("data/premier_league.csv")
+df.columns = df.columns.str.strip()  
 print("Total matches:", len(df))
 
 #Target Variable
@@ -18,29 +20,6 @@ df["outcome"] = df["FullTimeResult"].map(OUTCOME_MAP)
 
 print("Adding fast form features...")
 print("Adding goal strength features...")
-
-df["HomeGoalsAvg"] = (
-    df.groupby("HomeTeam")["FullTimeHomeTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
-
-df["AwayGoalsAvg"] = (
-    df.groupby("AwayTeam")["FullTimeAwayTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
-
-df["HomeConcededAvg"] = (
-    df.groupby("HomeTeam")["FullTimeAwayTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
-
-df["AwayConcededAvg"] = (
-    df.groupby("AwayTeam")["FullTimeHomeTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
-
-df["HomeGoalDiff"] = df["HomeGoalsAvg"] - df["HomeConcededAvg"]
-df["AwayGoalDiff"] = df["AwayGoalsAvg"] - df["AwayConcededAvg"]
 
 
 # Sort by date first
@@ -83,6 +62,33 @@ for _, row in df.iterrows():
 df["HomeForm5"] = home_forms
 df["AwayForm5"] = away_forms
 
+# Goal averages (rolling form)
+df["HomeGoalsAvg"] = (
+    df.groupby("HomeTeam")["FullTimeHomeTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["AwayGoalsAvg"] = (
+    df.groupby("AwayTeam")["FullTimeAwayTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["HomeConcededAvg"] = (
+    df.groupby("HomeTeam")["FullTimeAwayTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["AwayConcededAvg"] = (
+    df.groupby("AwayTeam")["FullTimeHomeTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+# Differences in goals and form
+df["HomeGoalDiff"] = df["HomeGoalsAvg"] - df["HomeConcededAvg"]
+df["AwayGoalDiff"] = df["AwayGoalsAvg"] - df["AwayConcededAvg"]
+df["FormDiff"] = df["HomeForm5"] - df["AwayForm5"]
+
+
 #Feature Columns
 FEATURE_COLUMNS = [
     "HomeForm5",
@@ -91,7 +97,10 @@ FEATURE_COLUMNS = [
     "AwayGoalsAvg",
     "HomeGoalDiff",
     "AwayGoalDiff"
+    
 ]
+
+
 
 
 
@@ -132,11 +141,46 @@ dt_acc = accuracy_score(y_test, dt_preds)
 print("Decision Tree Accuracy:", dt_acc)
 
 #Logistic Regression
-lr_model = LogisticRegression(max_iter=2000)
+lr_model = LogisticRegression(max_iter=2000   )
 lr_model.fit(X_train, y_train)
 
+# Logistic Regression predictions
+lr_probs = lr_model.predict_proba(X_test)
 lr_preds = lr_model.predict(X_test)
 lr_acc = accuracy_score(y_test, lr_preds)
+
+# Confidence analysis
+import numpy as np
+
+max_probs = lr_probs.max(axis=1)
+
+print("\nConfidence distribution:")
+print(np.percentile(max_probs, [50, 60, 70, 80, 90, 95]))
+
+CONFIDENCE_THRESHOLD = 0.60
+
+mask = max_probs >= CONFIDENCE_THRESHOLD
+
+filtered_preds = lr_preds[mask]
+filtered_true = y_test.values[mask]
+
+if len(filtered_preds) > 0:
+    filtered_acc = accuracy_score(filtered_true, filtered_preds)
+    print(f"Confident accuracy: {filtered_acc * 100:.2f}%")
+    print(f"Coverage: {len(filtered_preds)}/{len(y_test)}")
+else:
+    print("No predictions above confidence threshold")
+
+
+print("\n===============================")
+print("CONFIDENCE-BASED EVALUATION")
+print("===============================")
+print(f"Confidence threshold: {CONFIDENCE_THRESHOLD}")
+print(f"Confident accuracy: {filtered_acc * 100:.2f}%")
+print(f"Coverage: {len(filtered_preds)} / {len(y_test)} "
+      f"({len(filtered_preds)/len(y_test)*100:.1f}%)")
+print("===============================\n")
+
 
 print("Logistic Regression Accuracy:", lr_acc)
 

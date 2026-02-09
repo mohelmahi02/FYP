@@ -15,11 +15,17 @@ def compute_accuracy():
     row = cur.fetchone()
     conn.close()
 
-    total = int(row["total"] or 0)
-    correct = int(row["correct"] or 0)
+    total = int(row[0] or 0)  # First column
+    correct = int(row[1] or 0)  # Second column
 
     if total == 0:
         return 0.0, 0, 0
 
     accuracy = round((correct / total) * 100, 2)
     return accuracy, correct, total
+
+
+if __name__ == "__main__":
+    acc, correct, total = compute_accuracy()
+    print(f"Model accuracy: {acc}%")
+    print(f"Correct predictions: {correct}/{total}")

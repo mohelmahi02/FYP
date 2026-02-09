@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 from datetime import datetime, timezone
 
-from services.db_service import init_db, save_prediction
+from services.db_service import  save_prediction
 from services.form_service import add_form_features
 from services.fixtures_service import load_fixtures, get_next_matchweek
 from services.prediction_feature_service import build_prediction_features
@@ -18,11 +18,11 @@ OUTCOME_NAMES = {
     2: "Home Win"
 }
 
-CURRENT_GAMEWEEK = 25
+
 
 
 print("\nInitializing PostgreSQL...")
-init_db()
+
 
 print("\nLoading match history dataset...")
 df_data = pd.read_csv(DATA_FILE)
@@ -39,14 +39,19 @@ fixtures_df = load_fixtures(FIXTURES_FILE)
 
 print("\nSelecting next matchweek only...")
 next_week = get_next_matchweek(fixtures_df,df_data)
-next_week_fixtures = fixtures_df[fixtures_df["Gameweek"] == CURRENT_GAMEWEEK]
+
 
 print("Last played match date:", df_data["Date"].max())
 
 if next_week is None:
     print("No upcoming matchweek found in fixtures.")
     exit()
-    next_week = fixtures_df[fixtures_df["Gameweek"] == next_gw]
+
+# OVERRIDE: Force next gameweek (update this manually after each gameweek)
+next_week = 26  # ← Change this after each gameweek
+print(f"Predicting Gameweek: {next_week}")
+
+next_week_fixtures = fixtures_df[fixtures_df["Gameweek"] == next_week]
 
 print("\nUPCOMING MATCHWEEK PREDICTIONS")
 print("=" * 60)
@@ -67,27 +72,22 @@ for _, match in next_week_fixtures.iterrows():
     pred_class = int(model.predict(X)[0])
     probs = model.predict_proba(X)[0]
 
-    result = {
-        "home_team": home,
-        "away_team": away,
-        "utc_date": str(date),
-        "prediction": OUTCOME_NAMES[pred_class],
-        "home_win_prob": float(probs[2]),
-        "draw_prob": float(probs[1]),
-        "away_win_prob": float(probs[0]),
-        "model_used": "Logistic Regression",
-        "generated_at": datetime.now(timezone.utc)
-    }
-
     print(f"\n{home} vs {away}")
     print(f"Date: {date}")
-    print(f"Prediction: {result['prediction']}")
-    print(f"Confidence → Home: {result['home_win_prob']*100:.1f}% | "
-          f"Draw: {result['draw_prob']*100:.1f}% | "
-          f"Away: {result['away_win_prob']*100:.1f}%")
+    print(f"Prediction: {OUTCOME_NAMES[pred_class]}")
+    print(f"Confidence → Home: {probs[2]*100:.1f}% | "
+          f"Draw: {probs[1]*100:.1f}% | "
+          f"Away: {probs[0]*100:.1f}%")
 
-    save_prediction(result)
+    save_prediction(
+        home,
+        away,
+        pd.to_datetime(date),
+        OUTCOME_NAMES[pred_class]
+    )
+
     saved += 1
+
 
 
 print("\n" + "=" * 60)

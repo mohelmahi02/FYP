@@ -39,6 +39,7 @@ def build_prediction_features(df, home, away):
     if len(home_matches) < 3 or len(away_matches) < 3:
         return None
 
+    
     # Goals scored
     home_goals_avg = home_matches["FTHG"].mean()
     away_goals_avg = away_matches["FTAG"].mean()
