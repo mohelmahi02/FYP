@@ -40,13 +40,12 @@ def build_prediction_features(df, home, away):
         return None
 
     
-    # Goals scored
-    home_goals_avg = home_matches["FTHG"].mean()
-    away_goals_avg = away_matches["FTAG"].mean()
-
+   # Goals scored
+    home_goals_avg = home_matches["FullTimeHomeTeamGoals"].mean()
+    away_goals_avg = away_matches["FullTimeAwayTeamGoals"].mean()
     # Goals conceded
-    home_conceded_avg = home_matches["FTAG"].mean()
-    away_conceded_avg = away_matches["FTHG"].mean()
+    home_conceded_avg = home_matches["FullTimeAwayTeamGoals"].mean()
+    away_conceded_avg = away_matches["FullTimeHomeTeamGoals"].mean()
 
     # Goal differences
     home_goal_diff = home_goals_avg - home_conceded_avg

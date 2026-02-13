@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
 
+
 #Load Data
 df = pd.read_csv("data/premier_league.csv")
 df.columns = df.columns.str.strip()  
