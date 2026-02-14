@@ -9,7 +9,7 @@ from services.prediction_feature_service import build_prediction_features
 
 
 MODEL_PATH = "models/logistic_regression.pkl"
-DATA_FILE = "data/E0.csv"
+DATA_FILE = "data/premier_league.csv"
 FIXTURES_FILE = "data/fixtures_gw24_38.csv"
 
 OUTCOME_NAMES = {
@@ -47,9 +47,7 @@ if next_week is None:
     print("No upcoming matchweek found in fixtures.")
     exit()
 
-# OVERRIDE: Force next gameweek (update this manually after each gameweek)
-next_week = 26  # ← Change this after each gameweek
-print(f"Predicting Gameweek: {next_week}")
+
 
 next_week_fixtures = fixtures_df[fixtures_df["Gameweek"] == next_week]
 
