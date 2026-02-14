@@ -110,3 +110,39 @@ def update_prediction_result(
     conn.commit()
     cur.close()
     conn.close()
+
+def list_predictions(limit=50):
+    """Return last saved predictions"""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM predictions
+                ORDER BY generated_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def get_recent_predictions(limit=20):
+    """Return recent predictions"""
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM predictions
+                ORDER BY generated_at DESC
+                LIMIT %s;
+                """,
+                (limit,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()

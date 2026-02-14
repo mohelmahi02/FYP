@@ -4,11 +4,9 @@ import os
 import pickle
 import requests
 import pandas as pd
-from services.fixtures_service import load_next_matchweek
-
+from services.fixtures_service import load_fixtures, get_next_matchweek
 from services.model_service import get_model_bundle
 from services.db_service import (
-    init_db,
     save_prediction,
     list_predictions,
     get_recent_predictions,
@@ -19,7 +17,7 @@ from services.prediction_feature_service import build_prediction_features
 # Flask App Setup
 
 app = Flask(__name__)
-init_db()
+# init_db()
 
 
 # Constants
@@ -134,14 +132,19 @@ def predict_matchweek():
     model = bundle["model"]
     model_name = bundle["best_model_name"]
 
-    week, fixtures = load_next_matchweek()
-
+    # Load fixtures
+    fixtures_df = load_fixtures("data/fixtures_gw24_38.csv")
+    week = get_next_matchweek(fixtures_df, df_data)
+    
     if week is None:
         return jsonify({"error": "No upcoming matchweeks found"}), 404
 
+    # Get fixtures for this week
+    fixtures = fixtures_df[fixtures_df["Gameweek"] == week]
+    
     predictions = []
 
-    for match in fixtures:
+    for _, match in fixtures.iterrows():
         home = match["HomeTeam"]
         away = match["AwayTeam"]
         date = match["Date"]
@@ -174,7 +177,6 @@ def predict_matchweek():
         "count": len(predictions),
         "predictions": predictions
     })
-
 #Run flask
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
