@@ -4,6 +4,9 @@ import os
 import pickle
 import requests
 import pandas as pd
+from flask import Flask, jsonify, request
+from flask_cors import CORS 
+from datetime import datetime, timezone
 from services.fixtures_service import load_fixtures, get_next_matchweek
 from services.model_service import get_model_bundle
 from services.db_service import (
@@ -17,6 +20,7 @@ from services.prediction_feature_service import build_prediction_features
 # Flask App Setup
 
 app = Flask(__name__)
+CORS(app)
 # init_db()
 
 
