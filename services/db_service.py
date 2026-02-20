@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import os
 
 def get_conn():
@@ -18,30 +19,35 @@ def save_prediction(
     home_team,
     away_team,
     utc_date,
-    prediction
+    prediction,
+    home_win_prob=None,
+    draw_prob=None,
+    away_win_prob=None,
+    model_used="Logistic Regression"
 ):
     conn = get_conn()
     cur = conn.cursor()
-
     cur.execute(
         """
         INSERT INTO predictions (
             home_team,
             away_team,
             utc_date,
-            prediction
+            prediction,
+            home_win_prob,
+            draw_prob,
+            away_win_prob,
+            model_used
         )
-        VALUES (%s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+       
         """,
-        (home_team, away_team, utc_date, prediction)
+        (home_team, away_team, utc_date, prediction, 
+         home_win_prob, draw_prob, away_win_prob, model_used)
     )
-
     conn.commit()
     cur.close()
     conn.close()
-
-
 
 # GET PENDING PREDICTIONS
 
@@ -112,14 +118,15 @@ def update_prediction_result(
     conn.close()
 
 def list_predictions(limit=50):
-    """Return last saved predictions"""
+    """Return upcoming predictions (no results yet) as dictionaries"""
     conn = get_conn()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
                 SELECT * FROM predictions
-                ORDER BY generated_at DESC
+                WHERE actual_result IS NULL
+                ORDER BY utc_date ASC
                 LIMIT %s
                 """,
                 (limit,),
@@ -128,12 +135,11 @@ def list_predictions(limit=50):
     finally:
         conn.close()
 
-
 def get_recent_predictions(limit=20):
-    """Return recent predictions"""
+    """Return recent predictions as dictionaries"""
     conn = get_conn()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:  # Add RealDictCursor
             cur.execute(
                 """
                 SELECT *

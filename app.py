@@ -12,6 +12,7 @@ from services.model_service import get_model_bundle
 from services.db_service import (
     save_prediction,
     list_predictions,
+    get_conn,
     get_recent_predictions,
 )
 from services.prediction_feature_service import build_prediction_features
@@ -74,14 +75,38 @@ def history():
     rows = get_recent_predictions(limit)
     return jsonify({"count": len(rows), "predictions": rows})
 
+@app.get("/api/accuracy")
+def accuracy():
+    from services.evaluation_service import compute_accuracy
+    acc, correct, total = compute_accuracy()
+    return jsonify({
+        "accuracy": acc,
+        "correct": correct,
+        "total": total,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
 
 @app.get("/api/predictions")
 def predictions():
     limit = request.args.get("limit", default=50, type=int)
-    rows = list_predictions(limit)
-    return jsonify({"count": len(rows), "predictions": rows})
-
-
+    
+    conn = get_conn()
+    try:
+        from psycopg2.extras import RealDictCursor
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT * FROM predictions
+                WHERE actual_result IS NULL
+                ORDER BY utc_date ASC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            rows = cur.fetchall()
+            return jsonify({"count": len(rows), "predictions": rows})
+    finally:
+        conn.close()
 
 @app.get("/api/predict")
 def predict():

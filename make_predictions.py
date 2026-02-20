@@ -77,15 +77,18 @@ for _, match in next_week_fixtures.iterrows():
           f"Draw: {probs[1]*100:.1f}% | "
           f"Away: {probs[0]*100:.1f}%")
 
+    
     save_prediction(
         home,
         away,
         pd.to_datetime(date),
-        OUTCOME_NAMES[pred_class]
+        OUTCOME_NAMES[pred_class],
+        home_win_prob=float(probs[2]),
+        draw_prob=float(probs[1]),
+        away_win_prob=float(probs[0])
     )
 
-    saved += 1
-
+    saved += 1  
 
 
 print("\n" + "=" * 60)

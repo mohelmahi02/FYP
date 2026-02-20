@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://animated-waddle-r9vrgrq9vp93r5x-5000.app.github.dev/api';
 
 export const api = {
   // Get upcoming predictions
