@@ -6,8 +6,10 @@ FEATURE_COLUMNS = [
     "AwayForm5",
     "HomeGoalsAvg",
     "AwayGoalsAvg",
-    "HomeGoalDiff",
-    "AwayGoalDiff"
+    "HomeConcededAvg",
+    "AwayConcededAvg",
+    "FormCloseness",   
+    "GoalsCloseness"
 ]
 
 TEAM_NAME_MAP = {
@@ -39,27 +41,29 @@ def build_prediction_features(df, home, away):
     if len(home_matches) < 3 or len(away_matches) < 3:
         return None
 
-    
-   # Goals scored
+    # Goals scored
     home_goals_avg = home_matches["FullTimeHomeTeamGoals"].mean()
     away_goals_avg = away_matches["FullTimeAwayTeamGoals"].mean()
+    
     # Goals conceded
     home_conceded_avg = home_matches["FullTimeAwayTeamGoals"].mean()
     away_conceded_avg = away_matches["FullTimeHomeTeamGoals"].mean()
 
-    # Goal differences
-    home_goal_diff = home_goals_avg - home_conceded_avg
-    away_goal_diff = away_goals_avg - away_conceded_avg
-
     # Form points
     home_form = home_matches["HomeTeamPoints"].sum()
     away_form = away_matches["AwayTeamPoints"].sum()
+
+    # Closeness 
+    form_closeness = abs(home_form - away_form)
+    goals_closeness = abs(home_goals_avg - away_goals_avg)
 
     return pd.DataFrame([{
         "HomeForm5": home_form,
         "AwayForm5": away_form,
         "HomeGoalsAvg": home_goals_avg,
         "AwayGoalsAvg": away_goals_avg,
-        "HomeGoalDiff": home_goal_diff,
-        "AwayGoalDiff": away_goal_diff
+        "HomeConcededAvg": home_conceded_avg,
+        "AwayConcededAvg": away_conceded_avg,
+        "FormCloseness": form_closeness,
+        "GoalsCloseness": goals_closeness,
     }])[FEATURE_COLUMNS]

@@ -70,6 +70,11 @@ for _, match in next_week_fixtures.iterrows():
     pred_class = int(model.predict(X)[0])
     probs = model.predict_proba(X)[0]
 
+    # Get the confidence for the predicted class
+    predicted_prob = probs[pred_class]
+
+    
+
     print(f"\n{home} vs {away}")
     print(f"Date: {date}")
     print(f"Prediction: {OUTCOME_NAMES[pred_class]}")
@@ -77,7 +82,6 @@ for _, match in next_week_fixtures.iterrows():
           f"Draw: {probs[1]*100:.1f}% | "
           f"Away: {probs[0]*100:.1f}%")
 
-    
     save_prediction(
         home,
         away,
@@ -88,8 +92,7 @@ for _, match in next_week_fixtures.iterrows():
         away_win_prob=float(probs[0])
     )
 
-    saved += 1  
-
+    saved += 1
 
 print("\n" + "=" * 60)
 print(f"Saved {saved} matchweek predictions into PostgreSQL ")

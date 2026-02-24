@@ -6,6 +6,7 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedGameweek, setSelectedGameweek] = useState('all');
 
   useEffect(() => {
     loadHistory();
@@ -14,7 +15,7 @@ const History = () => {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const data = await api.getHistory(30);
+      const data = await api.getHistory(50);
       const evaluated = data.predictions.filter(p => p.actual_result !== null);
       setHistory(evaluated);
       setError(null);
@@ -42,18 +43,44 @@ const History = () => {
     );
   }
 
-  const correctPredictions = history.filter(h => h.correct).length;
-  const accuracy = history.length > 0 ? (correctPredictions / history.length * 100).toFixed(1) : 0;
+  // Get unique gameweeks
+  const gameweeks = [...new Set(history.map(h => h.gameweek).filter(g => g !== null))].sort((a, b) => b - a);
+
+  // Filter by gameweek
+  const filteredHistory = selectedGameweek === 'all' 
+    ? history 
+    : history.filter(h => h.gameweek === parseInt(selectedGameweek));
+
+  const correctPredictions = filteredHistory.filter(h => h.correct).length;
+  const accuracy = filteredHistory.length > 0 ? (correctPredictions / filteredHistory.length * 100).toFixed(1) : 0;
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Prediction History
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Prediction History
+          </h2>
+          
+          {/* Gameweek Filter */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Gameweek:</label>
+            <select 
+              value={selectedGameweek}
+              onChange={(e) => setSelectedGameweek(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Gameweeks</option>
+              {gameweeks.map(gw => (
+                <option key={gw} value={gw}>Gameweek {gw}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-3xl font-bold text-blue-600">{history.length}</div>
+            <div className="text-3xl font-bold text-blue-600">{filteredHistory.length}</div>
             <div className="text-sm text-gray-500">Total Predictions</div>
           </div>
           <div>
@@ -68,7 +95,7 @@ const History = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {history.map((pred, index) => (
+        {filteredHistory.map((pred, index) => (
           <PredictionCard
             key={index}
             homeTeam={pred.home_team}
@@ -85,9 +112,9 @@ const History = () => {
         ))}
       </div>
 
-      {history.length === 0 && (
+      {filteredHistory.length === 0 && (
         <div className="text-center text-gray-500 py-12">
-          No prediction history available
+          No predictions available for selected gameweek
         </div>
       )}
     </div>

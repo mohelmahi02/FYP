@@ -23,7 +23,8 @@ def save_prediction(
     home_win_prob=None,
     draw_prob=None,
     away_win_prob=None,
-    model_used="Logistic Regression"
+    model_used="Logistic Regression",
+    gameweek=None
 ):
     conn = get_conn()
     cur = conn.cursor()
@@ -37,13 +38,13 @@ def save_prediction(
             home_win_prob,
             draw_prob,
             away_win_prob,
-            model_used
+            model_used,gameweek
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
        
         """,
         (home_team, away_team, utc_date, prediction, 
-         home_win_prob, draw_prob, away_win_prob, model_used)
+         home_win_prob, draw_prob, away_win_prob, model_used,gameweek)
     )
     conn.commit()
     cur.close()

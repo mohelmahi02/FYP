@@ -74,33 +74,19 @@ df["AwayGoalsAvg"] = (
     .transform(lambda x: x.shift().rolling(5).mean())
 )
 
-df["HomeConcededAvg"] = (
-    df.groupby("HomeTeam")["FullTimeAwayTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
 
-df["AwayConcededAvg"] = (
-    df.groupby("AwayTeam")["FullTimeHomeTeamGoals"]
-    .transform(lambda x: x.shift().rolling(5).mean())
-)
-
-# Differences in goals and form
-df["HomeGoalDiff"] = df["HomeGoalsAvg"] - df["HomeConcededAvg"]
-df["AwayGoalDiff"] = df["AwayGoalsAvg"] - df["AwayConcededAvg"]
-df["FormDiff"] = df["HomeForm5"] - df["AwayForm5"]
+df["FormCloseness"] = abs(df["HomeForm5"] - df["AwayForm5"])
+df["GoalsCloseness"] = abs(df["HomeGoalsAvg"] - df["AwayGoalsAvg"])
 
 
-#Feature Columns
 FEATURE_COLUMNS = [
     "HomeForm5",
     "AwayForm5",
     "HomeGoalsAvg",
     "AwayGoalsAvg",
-    "HomeGoalDiff",
-    "AwayGoalDiff"
-    
+    "FormCloseness",     
+    "GoalsCloseness",    
 ]
-
 
 
 

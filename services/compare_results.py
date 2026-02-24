@@ -27,7 +27,6 @@ TEAM_NAME_MAP = {
     "Burnley FC": "Burnley",
 }
 
-
 def normalise_team(name: str) -> str:
     return TEAM_NAME_MAP.get(name, name)
 
@@ -37,7 +36,7 @@ def to_iso_utc(dt_str: str) -> str:
     Ensure API utcDate matches DB utc_date format.
     DB utc_date in your table looked like: '2026-02-01T14:00:00Z' (text).
     """
-    # If already ends with Z, keep it
+ 
     if isinstance(dt_str, str) and dt_str.endswith("Z"):
         return dt_str
     return dt_str
@@ -66,26 +65,17 @@ def extract_result(match):
 
 def find_matching_match(finished_matches, home_team, away_team, utc_date):
     """
-    Matches DB row to API row by home/away team + utc date.
+    Matches DB row to API row by home/away team only (ignoring exact time)
     """
-    # Convert DB datetime to string with T and Z to match API format
-    if isinstance(utc_date, str):
-        
-        db_date_str = utc_date.replace(' ', 'T') + 'Z'
-    else:
-        
-        db_date_str = utc_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-    
     for m in finished_matches:
         api_home = normalise_team(m.get("homeTeam", {}).get("name", ""))
         api_away = normalise_team(m.get("awayTeam", {}).get("name", ""))
-        api_date = m.get("utcDate")
-
-        if api_home == home_team and api_away == away_team and api_date == db_date_str:
+        
+       
+        if api_home == home_team and api_away == away_team:
             return m
-
+    
     return None
-
 
 def main():
     print("Fetching finished matches from API...")

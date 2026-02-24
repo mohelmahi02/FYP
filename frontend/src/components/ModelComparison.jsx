@@ -22,13 +22,13 @@ const ModelComparison = () => {
   };
 
   const features = [
-    { name: 'HomeForm5', description: '5-game form (home team)' },
-    { name: 'AwayForm5', description: '5-game form (away team)' },
-    { name: 'HomeGoalsAvg', description: 'Average goals scored (home)' },
-    { name: 'AwayGoalsAvg', description: 'Average goals scored (away)' },
-    { name: 'HomeGoalDiff', description: 'Goal difference (home)' },
-    { name: 'AwayGoalDiff', description: 'Goal difference (away)' }
-  ];
+  { name: 'HomeForm5', description: '5-game form (home team)' },
+  { name: 'AwayForm5', description: '5-game form (away team)' },
+  { name: 'HomeGoalsAvg', description: 'Average goals scored (home)' },
+  { name: 'AwayGoalsAvg', description: 'Average goals scored (away)' },
+  { name: 'FormCloseness', description: 'Form difference between teams' },
+  { name: 'GoalsCloseness', description: 'Goals difference between teams' }
+];
 
   if (loading) {
     return (

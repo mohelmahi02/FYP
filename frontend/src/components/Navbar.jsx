@@ -21,7 +21,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center">
             <span className="text-white text-xl font-bold">
-              ⚽ PL Predictor
+               PL Predictor
             </span>
           </Link>
 
