@@ -1,10 +1,4 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: fyp-postgres
-    env: docker
-    plan: free
-    
   # Flask Backend
   - type: web
     name: fyp-backend
@@ -15,3 +9,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.1
+
+databases:
+  # PostgreSQL Database  
+  - name: fyp-postgres
+    databaseName: fyp
+    user: fyp_user
+    plan: free
