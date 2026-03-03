@@ -34,13 +34,13 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-6 shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">
-          Premier League Match Predictor
+        <h1 className="text-5xl font-bold mb-2">
+          ⚽ Premier League Match Predictor
         </h1>
         <p className="text-blue-100">
           AI-powered predictions using Logistic Regression
         </p>
-      </div>
+      </div>  
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">

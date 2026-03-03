@@ -66,18 +66,21 @@ for _, match in next_week_fixtures.iterrows():
     if X is None:
         print(f"Skipping {home} vs {away} (not enough history)")
         continue
-
+        
     pred_class = int(model.predict(X)[0])
     probs = model.predict_proba(X)[0]
-
-    # Get the confidence for the predicted class
-    predicted_prob = probs[pred_class]
-
     
-
+    # Override: If no outcome is confident (all close), predict draw
+    max_prob = probs.max()
+    if max_prob < 0.40:  # No clear favorite
+        pred_class = 1  # Force draw prediction
+        prediction = "Draw"
+    else:
+        prediction = OUTCOME_NAMES[pred_class]
+    
     print(f"\n{home} vs {away}")
     print(f"Date: {date}")
-    print(f"Prediction: {OUTCOME_NAMES[pred_class]}")
+    print(f"Prediction: {prediction}")
     print(f"Confidence → Home: {probs[2]*100:.1f}% | "
           f"Draw: {probs[1]*100:.1f}% | "
           f"Away: {probs[0]*100:.1f}%")
@@ -86,10 +89,11 @@ for _, match in next_week_fixtures.iterrows():
         home,
         away,
         pd.to_datetime(date),
-        OUTCOME_NAMES[pred_class],
+        prediction,
         home_win_prob=float(probs[2]),
         draw_prob=float(probs[1]),
-        away_win_prob=float(probs[0])
+        away_win_prob=float(probs[0]),
+        gameweek=int(next_week)
     )
 
     saved += 1

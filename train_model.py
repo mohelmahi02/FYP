@@ -11,9 +11,12 @@ from sklearn.metrics import accuracy_score
 
 #Load Data
 df = pd.read_csv("data/premier_league.csv")
-df.columns = df.columns.str.strip()  
-print("Total matches:", len(df))
+df.columns = df.columns.str.strip()
 
+# FILTER: Only use recent 3 seasons for relevance
+df = df[df["Season"].isin(["2023-2024", "2024-2025", "2025-2026"])]
+
+print("Total matches (last 3 seasons):", len(df))
 #Target Variable
 OUTCOME_MAP = {"A": 0, "D": 1, "H": 2}
 df = df.dropna(subset=["FullTimeResult"])
@@ -59,7 +62,7 @@ for _, row in df.iterrows():
         team_history.setdefault(home, []).append(1)
         team_history.setdefault(away, []).append(1)
 
-# Assign columns
+# Assign 5-game form columns
 df["HomeForm5"] = home_forms
 df["AwayForm5"] = away_forms
 
@@ -73,19 +76,39 @@ df["AwayGoalsAvg"] = (
     df.groupby("AwayTeam")["FullTimeAwayTeamGoals"]
     .transform(lambda x: x.shift().rolling(5).mean())
 )
+# DRAW RATE 
+df["HomeDrawRate"] = (
+    df.groupby("HomeTeam")["FullTimeResult"]
+    .transform(lambda x: (x.shift() == 'D').astype(int).rolling(5).mean())
+)
 
+df["AwayDrawRate"] = (
+    df.groupby("AwayTeam")["FullTimeResult"]
+    .transform(lambda x: (x.shift() == 'D').astype(int).rolling(5).mean())
+)
 
+# Closeness features
 df["FormCloseness"] = abs(df["HomeForm5"] - df["AwayForm5"])
 df["GoalsCloseness"] = abs(df["HomeGoalsAvg"] - df["AwayGoalsAvg"])
 
+# LEAGUE POSITION 
+df["HomePosition"] = df.groupby("HomeTeam")["HomeForm5"].transform(lambda x: x.rank(ascending=False, pct=True))
+df["AwayPosition"] = df.groupby("AwayTeam")["AwayForm5"].transform(lambda x: x.rank(ascending=False, pct=True))
+df["PositionGap"] = abs(df["HomePosition"] - df["AwayPosition"])
 
+#  FEATURE_COLUMNS
 FEATURE_COLUMNS = [
     "HomeForm5",
     "AwayForm5",
     "HomeGoalsAvg",
     "AwayGoalsAvg",
-    "FormCloseness",     
-    "GoalsCloseness",    
+    "FormCloseness",
+    "GoalsCloseness",
+    "HomeDrawRate",    
+    "AwayDrawRate",
+    "HomePosition",      
+    "AwayPosition",      
+    "PositionGap",       
 ]
 
 
@@ -96,8 +119,8 @@ FEATURE_COLUMNS = [
 df = df.dropna(subset=FEATURE_COLUMNS)
 
 #Train-test split
-train_df = df[df["Season"] < "2023-2024"]
-test_df  = df[df["Season"] >= "2023-2024"]
+train_df = df[df["Season"] < "2025-2026"]
+test_df  = df[df["Season"] >= "2025-2026"]
 
 X_train = train_df[FEATURE_COLUMNS]
 y_train = train_df["outcome"]

@@ -38,18 +38,18 @@ def save_prediction(
             home_win_prob,
             draw_prob,
             away_win_prob,
-            model_used,gameweek
+            model_used,
+            gameweek
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-       
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT DO NOTHING
         """,
         (home_team, away_team, utc_date, prediction, 
-         home_win_prob, draw_prob, away_win_prob, model_used,gameweek)
+         home_win_prob, draw_prob, away_win_prob, model_used, gameweek)
     )
     conn.commit()
     cur.close()
     conn.close()
-
 # GET PENDING PREDICTIONS
 
 def get_pending_predictions():

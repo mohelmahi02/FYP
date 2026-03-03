@@ -35,27 +35,29 @@ def build_played_set(history_df: pd.DataFrame) -> set:
 
 def get_next_matchweek(fixtures_df, history_df):
     """
-    Find the next gameweek to predict based on completed gameweeks in history.
-    Looks at Season 2025-2026 specifically.
+    Find the next gameweek to predict based on completed gameweeks in CURRENT season only.
     """
     fixtures_df = fixtures_df.copy()
     history_df = history_df.copy()
     
-    # Get current season from history
+    # Filter to CURRENT SEASON ONLY
     current_season = history_df[history_df["Season"] == "2025-2026"]
     
     if current_season.empty:
-       
+        return 24  # Start of fixtures
+    
+    # Check if MatchWeek column exists
+    if "MatchWeek" not in current_season.columns:
         return 24
     
-   
+    # Count matches by gameweek in CURRENT SEASON
     gameweeks = current_season.groupby("MatchWeek").size()
     
-    # Find highest gameweek with 10 matches 
-    complete_gameweeks = gameweeks[gameweeks == 10].index
+    # Find highest gameweek with 10 matches (fully complete)
+    complete_gameweeks = gameweeks[gameweeks >= 10].index
     
     if len(complete_gameweeks) == 0:
-        return 24  
+        return 24
     
     last_complete = complete_gameweeks.max()
     next_gw = last_complete + 1
