@@ -16,6 +16,7 @@ from services.db_service import (
     get_recent_predictions,
 )
 from services.prediction_feature_service import build_prediction_features
+print(f"DEBUG: DATABASE_URL = {os.getenv('DATABASE_URL', 'NOT SET')}")
 
 
 # Flask App Setup
