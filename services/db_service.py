@@ -3,13 +3,24 @@ from psycopg2.extras import RealDictCursor
 import os
 
 def get_conn():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("POSTGRES_DB", "fyp"),
-        user=os.getenv("POSTGRES_USER", "fyp_user"),
-        password=os.getenv("POSTGRES_PASSWORD", "fyp_pass"),
-        port=5432
-    )
+
+    database_url = os.getenv("DATABASE_URL")
+    
+    if database_url:
+       
+       
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        return psycopg2.connect(database_url)
+    else:
+        
+        return psycopg2.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            database=os.getenv("POSTGRES_DB", "fyp"),
+            user=os.getenv("POSTGRES_USER", "fyp_user"),
+            password=os.getenv("POSTGRES_PASSWORD", "fyp_pass"),
+            port=5432
+        )
 
 
 
