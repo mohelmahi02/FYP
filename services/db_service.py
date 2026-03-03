@@ -12,7 +12,7 @@ def get_conn():
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
         
-       # return psycopg2.connect(database_url)
+         return psycopg2.connect(database_url)
     else:
         
         return psycopg2.connect(
