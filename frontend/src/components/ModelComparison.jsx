@@ -22,13 +22,23 @@ const ModelComparison = () => {
   };
 
   const features = [
-  { name: 'HomeForm5', description: '5-game form (home team)' },
-  { name: 'AwayForm5', description: '5-game form (away team)' },
-  { name: 'HomeGoalsAvg', description: 'Average goals scored (home)' },
-  { name: 'AwayGoalsAvg', description: 'Average goals scored (away)' },
-  { name: 'FormCloseness', description: 'Form difference between teams' },
-  { name: 'GoalsCloseness', description: 'Goals difference between teams' }
-];
+    { name: 'HomeForm5', description: 'Last 5 games points (home team)' },
+    { name: 'AwayForm5', description: 'Last 5 games points (away team)' },
+    { name: 'HomeGoalsAvg', description: 'Average goals scored (home)' },
+    { name: 'AwayGoalsAvg', description: 'Average goals scored (away)' },
+    { name: 'HomeConcededAvg', description: 'Average goals conceded (home)' },
+    { name: 'AwayConcededAvg', description: 'Average goals conceded (away)' },
+    { name: 'FormCloseness', description: 'Form difference between teams' },
+    { name: 'GoalsCloseness', description: 'Goals difference between teams' },
+    { name: 'HomeDrawRate', description: 'Draw rate in last 5 games (home)' },
+    { name: 'AwayDrawRate', description: 'Draw rate in last 5 games (away)' },
+    { name: 'HomePosition', description: 'Form-based ranking (percentile)' },
+    { name: 'AwayPosition', description: 'Form-based ranking (percentile)' },
+    { name: 'PositionGap', description: 'Difference in form rankings' },
+    { name: 'HomeTablePos', description: 'Actual league position (from API) ⭐', isNew: true },
+    { name: 'AwayTablePos', description: 'Actual league position (from API) ⭐', isNew: true },
+    { name: 'TablePosGap', description: 'Difference in actual positions ⭐', isNew: true }
+  ];
 
   if (loading) {
     return (
@@ -45,7 +55,7 @@ const ModelComparison = () => {
           Model Comparison
         </h2>
         <p className="text-gray-600">
-          Training accuracy on historical Premier League data (2023-2024 season)
+          Training accuracy on historical Premier League data (last 3 seasons: 2023-2026)
         </p>
       </div>
 
@@ -94,13 +104,19 @@ const ModelComparison = () => {
 
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Features Used for Prediction
+          Features Used for Prediction (16 Total)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {features.map((feature, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-sm">{index + 1}</span>
+            <div key={index} className={`flex items-start space-x-3 p-3 rounded-lg ${
+              feature.isNew ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+            }`}>
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                feature.isNew ? 'bg-green-100' : 'bg-blue-100'
+              }`}>
+                <span className={`font-bold text-sm ${
+                  feature.isNew ? 'text-green-600' : 'text-blue-600'
+                }`}>{index + 1}</span>
               </div>
               <div>
                 <div className="font-semibold text-gray-800">{feature.name}</div>
@@ -130,7 +146,7 @@ const ModelComparison = () => {
           </li>
           <li className="flex items-start">
             <span className="mr-2">✓</span>
-            <span>Interpretable model suitable for academic dissertation</span>
+            <span>Uses actual league positions from API for realistic predictions</span>
           </li>
         </ul>
       </div>

@@ -1,0 +1,41 @@
+id,home_team,away_team,utc_date,prediction,home_win_prob,draw_prob,away_win_prob,model_used,generated_at,actual_result,correct,home_goals,away_goals,gameweek
+51,Man City,Newcastle,2026-02-21 12:30:00+00:00,Home Win,0.671,0.19,0.139,Logistic Regression,2026-02-20 10:00:00+00:00,Home Win,True,2.0,1.0,27
+55,Nott'm Forest,Liverpool,2026-02-21 15:00:00+00:00,Away Win,0.32,0.269,0.41,Logistic Regression,2026-02-20 10:00:00+00:00,Away Win,True,0.0,1.0,27
+54,Chelsea,Burnley,2026-02-21 15:00:00+00:00,Home Win,0.561,0.242,0.198,Logistic Regression,2026-02-20 10:00:00+00:00,Draw,False,1.0,1.0,27
+53,Brentford,Brighton,2026-02-21 15:00:00+00:00,Home Win,0.399,0.28,0.321,Logistic Regression,2026-02-20 10:00:00+00:00,Away Win,False,0.0,2.0,27
+52,Aston Villa,Leeds,2026-02-21 15:00:00+00:00,Home Win,0.598,0.232,0.17,Logistic Regression,2026-02-20 10:00:00+00:00,Draw,False,1.0,1.0,27
+56,West Ham,Bournemouth,2026-02-21 17:30:00+00:00,Away Win,0.355,0.285,0.36,Logistic Regression,2026-02-20 10:00:00+00:00,Draw,False,0.0,0.0,27
+58,Sunderland,Fulham,2026-02-22 14:00:00+00:00,Home Win,0.53,0.258,0.212,Logistic Regression,2026-02-20 10:00:00+00:00,Away Win,False,1.0,3.0,27
+57,Crystal Palace,Wolves,2026-02-22 14:00:00+00:00,Away Win,0.284,0.263,0.453,Logistic Regression,2026-02-20 10:00:00+00:00,Home Win,False,1.0,0.0,27
+59,Spurs,Arsenal,2026-02-22 16:30:00+00:00,Away Win,0.287,0.266,0.446,Logistic Regression,2026-02-20 10:00:00+00:00,Away Win,True,1.0,4.0,27
+60,Everton,Man Utd,2026-02-23 20:00:00+00:00,Home Win,0.444,0.295,0.261,Logistic Regression,2026-02-20 10:00:00+00:00,Away Win,False,0.0,1.0,27
+61,Wolves,Aston Villa,2026-02-27 20:00:00+00:00,Home Win,0.481,0.271,0.248,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,True,2.0,0.0,28
+62,Bournemouth,Sunderland,2026-02-28 12:30:00+00:00,Home Win,0.602,0.23,0.168,Logistic Regression,2026-02-27 10:00:00+00:00,Draw,False,1.0,1.0,28
+64,Burnley,Brentford,2026-02-28 15:00:00+00:00,Away Win,0.278,0.256,0.466,Logistic Regression,2026-02-27 10:00:00+00:00,Away Win,True,3.0,4.0,28
+65,Liverpool,West Ham,2026-02-28 15:00:00+00:00,Home Win,0.487,0.269,0.243,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,True,5.0,2.0,28
+66,Newcastle,Everton,2026-02-28 15:00:00+00:00,Home Win,0.542,0.241,0.217,Logistic Regression,2026-02-27 10:00:00+00:00,Away Win,False,2.0,3.0,28
+63,Brighton,Nott'm Forest,2026-02-28 15:00:00+00:00,Draw,0.379,0.285,0.335,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,False,2.0,1.0,28
+67,Leeds,Man City,2026-02-28 17:30:00+00:00,Draw,0.368,0.277,0.355,Logistic Regression,2026-02-27 10:00:00+00:00,Away Win,False,0.0,1.0,28
+69,Man Utd,Crystal Palace,2026-03-01 14:00:00+00:00,Draw,0.36,0.284,0.356,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,False,2.0,1.0,28
+68,Fulham,Spurs,2026-03-01 14:00:00+00:00,Home Win,0.62,0.219,0.161,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,True,2.0,1.0,28
+70,Arsenal,Chelsea,2026-03-01 16:30:00+00:00,Away Win,0.3,0.264,0.436,Logistic Regression,2026-02-27 10:00:00+00:00,Home Win,False,2.0,1.0,28
+72,Everton,Burnley,2026-03-03 19:30:00+00:00,Away Win,0.055,0.08,0.865,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Home Win,False,2.0,0.0,29
+71,Bournemouth,Brentford,2026-03-03 19:30:00+00:00,Away Win,0.125,0.207,0.668,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Draw,False,0.0,0.0,29
+73,Leeds,Sunderland,2026-03-03 19:30:00+00:00,Home Win,0.511,0.32,0.169,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Away Win,False,0.0,1.0,29
+74,Wolves,Liverpool,2026-03-03 20:15:00+00:00,Away Win,0.25,0.25,0.5,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Home Win,False,2.0,1.0,29
+75,Aston Villa,Chelsea,2026-03-04 19:30:00+00:00,Home Win,0.468,0.309,0.223,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Away Win,False,1.0,4.0,29
+78,Man City,Nott'm Forest,2026-03-04 19:30:00+00:00,Home Win,0.616,0.225,0.159,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Draw,False,2.0,2.0,29
+77,Fulham,West Ham,2026-03-04 19:30:00+00:00,Draw,0.335,0.282,0.383,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Away Win,False,0.0,1.0,29
+76,Brighton,Arsenal,2026-03-04 19:30:00+00:00,Away Win,0.3,0.2,0.5,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Away Win,True,0.0,1.0,29
+79,Newcastle,Man Utd,2026-03-04 20:15:00+00:00,Draw,0.35,0.35,0.3,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Home Win,False,2.0,1.0,29
+80,Spurs,Crystal Palace,2026-03-05 20:00:00+00:00,Draw,0.35,0.35,0.3,Logistic Regression,2026-03-03 15:08:33.113662+00:00,Away Win,False,1.0,3.0,29
+91,West Ham,Man City,2026-03-14 12:30:00+00:00,Away Win,0.33994091167598284,0.20887800993139982,0.4511810783926172,Logistic Regression,2026-03-12 14:14:30.732479+00:00,,,,,30
+93,Crystal Palace,Leeds,2026-03-14 15:00:00+00:00,Away Win,0.353679495952407,0.1922037316573835,0.4541167723902094,Logistic Regression,2026-03-12 14:14:34.286673+00:00,,,,,30
+94,Man Utd,Aston Villa,2026-03-14 15:00:00+00:00,Home Win,0.7680046086228183,0.16595871334643952,0.06603667803074217,Logistic Regression,2026-03-12 14:14:36.020488+00:00,,,,,30
+96,Sunderland,Brighton,2026-03-14 15:00:00+00:00,Away Win,0.21783967278708782,0.22580331898066286,0.5563570082322493,Logistic Regression,2026-03-12 14:14:39.067715+00:00,,,,,30
+95,Nott'm Forest,Fulham,2026-03-14 15:00:00+00:00,Away Win,0.07400206980779604,0.16784646358917968,0.7581514666030243,Logistic Regression,2026-03-12 14:14:37.596615+00:00,,,,,30
+92,Burnley,Bournemouth,2026-03-14 15:00:00+00:00,Away Win,0.23608955504415516,0.23046774817887147,0.5334426967769733,Logistic Regression,2026-03-12 14:14:32.682165+00:00,,,,,30
+97,Chelsea,Newcastle,2026-03-14 17:30:00+00:00,Draw,0.3696977920752936,0.2833261114056756,0.3469760965190308,Logistic Regression,2026-03-12 14:14:40.611328+00:00,,,,,30
+98,Arsenal,Everton,2026-03-15 14:00:00+00:00,Home Win,0.6794238869821618,0.2457008032716698,0.07487530974616842,Logistic Regression,2026-03-12 14:14:42.367470+00:00,,,,,30
+99,Liverpool,Spurs,2026-03-15 16:30:00+00:00,Home Win,0.4991580654998059,0.262120696740716,0.2387212377594781,Logistic Regression,2026-03-12 14:14:44.046617+00:00,,,,,30
+100,Brentford,Wolves,2026-03-16 20:00:00+00:00,Home Win,0.6628845105089279,0.21502445619683946,0.12209103329423251,Logistic Regression,2026-03-12 14:14:45.631231+00:00,,,,,30
