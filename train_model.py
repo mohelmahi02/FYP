@@ -76,6 +76,17 @@ df["AwayGoalsAvg"] = (
     df.groupby("AwayTeam")["FullTimeAwayTeamGoals"]
     .transform(lambda x: x.shift().rolling(5).mean())
 )
+
+df["HomeConcededAvg"] = (
+    df.groupby("HomeTeam")["FullTimeAwayTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
+df["AwayConcededAvg"] = (
+    df.groupby("AwayTeam")["FullTimeHomeTeamGoals"]
+    .transform(lambda x: x.shift().rolling(5).mean())
+)
+
 # DRAW RATE 
 df["HomeDrawRate"] = (
     df.groupby("HomeTeam")["FullTimeResult"]
@@ -102,15 +113,65 @@ FEATURE_COLUMNS = [
     "AwayForm5",
     "HomeGoalsAvg",
     "AwayGoalsAvg",
+    "HomeConcededAvg",
+    "AwayConcededAvg",
     "FormCloseness",
     "GoalsCloseness",
-    "HomeDrawRate",    
+    "HomeDrawRate",
     "AwayDrawRate",
-    "HomePosition",      
-    "AwayPosition",      
-    "PositionGap",       
+    "HomePosition",
+    "AwayPosition",
+    "PositionGap",
+    "HomeTablePos",      
+    "AwayTablePos",      
+    "TablePosGap",       
 ]
 
+# Calculate actual table positions at time of each match
+
+df = df.sort_values('Date')
+
+home_table_pos = []
+away_table_pos = []
+
+for idx, row in df.iterrows():
+    # Get all matches before this one
+    prior_matches = df[df['Date'] < row['Date']]
+    
+    if len(prior_matches) == 0:
+        # Season start - no prior data
+        home_table_pos.append(0.5)
+        away_table_pos.append(0.5)
+        continue
+    
+    # Calculate cumulative points for all teams
+    team_points = {}
+    for _, m in prior_matches.iterrows():
+        home_team = m['HomeTeam']
+        away_team = m['AwayTeam']
+        
+        if home_team not in team_points:
+            team_points[home_team] = 0
+        if away_team not in team_points:
+            team_points[away_team] = 0
+        
+        team_points[home_team] += m['HomeTeamPoints']
+        team_points[away_team] += m['AwayTeamPoints']
+    
+    # Rank by points
+    sorted_teams = sorted(team_points.items(), key=lambda x: x[1], reverse=True)
+    positions = {team: (pos + 1) for pos, (team, pts) in enumerate(sorted_teams)}
+    
+
+    home_pos = positions.get(row['HomeTeam'], len(positions) // 2) / len(positions)
+    away_pos = positions.get(row['AwayTeam'], len(positions) // 2) / len(positions)
+    
+    home_table_pos.append(home_pos)
+    away_table_pos.append(away_pos)
+
+df['HomeTablePos'] = home_table_pos
+df['AwayTablePos'] = away_table_pos
+df['TablePosGap'] = abs(df['HomeTablePos'] - df['AwayTablePos'])
 
 
 
