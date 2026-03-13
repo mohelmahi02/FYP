@@ -35,6 +35,9 @@ const Navbar = () => {
             <Link to="/models" className={linkClass('/models')}>
               Models
             </Link>
+            <Link to="/team-stats" className={linkClass('/team-stats')}>
+              Team Stats
+            </Link>
           </div>
         </div>
       </div>

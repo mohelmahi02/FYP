@@ -16,8 +16,9 @@ from services.db_service import (
     get_recent_predictions,
 )
 from services.prediction_feature_service import build_prediction_features
-print(f"DEBUG: DATABASE_URL = {os.getenv('DATABASE_URL', 'NOT SET')}")
+from services.standings_service import get_current_standings  # ADD THIS
 
+print(f"DEBUG: DATABASE_URL = {os.getenv('DATABASE_URL', 'NOT SET')}")
 
 # Flask App Setup
 
@@ -207,6 +208,25 @@ def predict_matchweek():
         "count": len(predictions),
         "predictions": predictions
     })
+@app.get("/api/standings")
+def standings():
+    """Get current Premier League standings"""
+    try:
+        standings_dict = get_current_standings()
+        
+        if not standings_dict:
+            return jsonify({"error": "Failed to fetch standings"}), 500
+        
+        # Convert to list format sorted by position
+        standings_list = [
+            {"team": team, "position": pos}
+            for team, pos in sorted(standings_dict.items(), key=lambda x: x[1])
+        ]
+        
+        return jsonify(standings_list)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 #Run flask
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

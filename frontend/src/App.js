@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import History from './components/History';
 import ModelComparison from './components/ModelComparison';
+import TeamStats from './components/TeamStats';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/models" element={<ModelComparison />} />
+            <Route path="/team-stats" element={<TeamStats />} />
           </Routes>
         </main>
 
