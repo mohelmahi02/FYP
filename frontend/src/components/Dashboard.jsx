@@ -18,11 +18,16 @@ const Dashboard = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const [modelsData] = await Promise.all([
+      const [accuracyData, modelsData] = await Promise.all([
+        api.getAccuracy(),  // Fetch real accuracy
         api.getModels()
       ]);
       
-      setStats({ accuracy: 50, correct: 10, total: 20 }); // Temp values
+      setStats({
+        accuracy: accuracyData.accuracy * 100,  // Convert to percentage
+        correct: accuracyData.correct,
+        total: accuracyData.total
+      });
       setModels(modelsData);
     } catch (err) {
       console.error('Failed to load stats:', err);
@@ -72,10 +77,10 @@ const Dashboard = () => {
             Features Used
           </div>
           <div className="text-lg font-semibold text-gray-900 mt-2">
-            6 Features
+            16 Features
           </div>
           <div className="text-sm text-gray-600 mt-1">
-            Form, Goals, Differences
+            Form, Goals, Positions, Draw Rates
           </div>
         </div>
       </div>
