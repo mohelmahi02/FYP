@@ -14,27 +14,26 @@ const Dashboard = () => {
   useEffect(() => {
     loadStats();
   }, []);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      const [accuracyData, modelsData] = await Promise.all([
-        api.getAccuracy(),  // Fetch real accuracy
-        api.getModels()
-      ]);
-      
-      setStats({
-        accuracy: accuracyData.accuracy * 100,  // Convert to percentage
-        correct: accuracyData.correct,
-        total: accuracyData.total
-      });
-      setModels(modelsData);
-    } catch (err) {
-      console.error('Failed to load stats:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadStats = async () => {
+  try {
+    setLoading(true);
+    const [accuracyData, modelsData] = await Promise.all([
+      api.getAccuracy(),
+      api.getModels()
+    ]);
+    
+    setStats({
+      accuracy: accuracyData.accuracy,  // Already a percentage, don't multiply
+      correct: accuracyData.correct,
+      total: accuracyData.total
+    });
+    setModels(modelsData);
+  } catch (err) {
+    console.error('Failed to load stats:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="space-y-6">
