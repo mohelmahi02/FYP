@@ -1,8 +1,13 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://fyp-backend-ly40.onrender.com/api';
+// Use local backend in development, Render in production
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://fyp-backend-ly40.onrender.com/api'
+  : 'http://localhost:5000/api';
 
 export const api = {
+  BASE_URL: API_BASE_URL,
+  
   getPredictions: async () => {
     const response = await axios.get(`${API_BASE_URL}/predictions?limit=10`);
     return response.data;

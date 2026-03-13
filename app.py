@@ -16,7 +16,7 @@ from services.db_service import (
     get_recent_predictions,
 )
 from services.prediction_feature_service import build_prediction_features
-from services.standings_service import get_current_standings  # ADD THIS
+from services.standings_service import get_current_standings, get_full_standings 
 
 print(f"DEBUG: DATABASE_URL = {os.getenv('DATABASE_URL', 'NOT SET')}")
 
@@ -210,23 +210,32 @@ def predict_matchweek():
     })
 @app.get("/api/standings")
 def standings():
-    """Get current Premier League standings"""
+    """Get current Premier League standings with full stats"""
     try:
-        standings_dict = get_current_standings()
+        standings_list = get_full_standings()  # Use get_full_standings
         
-        if not standings_dict:
+        if not standings_list:
             return jsonify({"error": "Failed to fetch standings"}), 500
         
-        # Convert to list format sorted by position
-        standings_list = [
-            {"team": team, "position": pos}
-            for team, pos in sorted(standings_dict.items(), key=lambda x: x[1])
-        ]
+        # Extract key stats for frontend
+        simplified = []
+        for entry in standings_list:
+            simplified.append({
+                "position": entry["position"],
+                "team": entry["team"]["name"],
+                "played": entry["playedGames"],
+                "won": entry["won"],
+                "drawn": entry["draw"],
+                "lost": entry["lost"],
+                "goalsFor": entry["goalsFor"],
+                "goalsAgainst": entry["goalsAgainst"],
+                "goalDifference": entry["goalDifference"],
+                "points": entry["points"]
+            })
         
-        return jsonify(standings_list)
+        return jsonify(simplified)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 #Run flask
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

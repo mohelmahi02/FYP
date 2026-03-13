@@ -1,8 +1,36 @@
 import requests
 import os
 
+def get_full_standings():
+    """Fetch current Premier League standings with full stats from API"""
+    
+    api_key = os.getenv("FOOTBALL_DATA_API_KEY")
+    
+    if not api_key:
+        print("Warning: FOOTBALL_DATA_API_KEY not set")
+        return []
+    
+    url = "https://api.football-data.org/v4/competitions/PL/standings"
+    headers = {"X-Auth-Token": api_key}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            standings = data["standings"][0]["table"]
+            
+            print(f"✓ Fetched full standings for {len(standings)} teams")
+            return standings
+        else:
+            print(f"Failed to fetch standings: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error fetching standings: {e}")
+        return []
+
 def get_current_standings():
-    """Fetch current Premier League standings from API"""
+    """Fetch current Premier League standings as position map (for predictions)"""
     
     api_key = os.getenv("FOOTBALL_DATA_API_KEY")
     
@@ -20,7 +48,7 @@ def get_current_standings():
             data = response.json()
             standings = data["standings"][0]["table"]
             
-            # Create dictionary: team name -> position (1-20)
+            # Create dictionary: team name -> position 
             position_map = {}
             for entry in standings:
                 team_name = entry["team"]["name"]
@@ -35,22 +63,3 @@ def get_current_standings():
     except Exception as e:
         print(f"Error fetching standings: {e}")
         return {}
-
-# Team name mapping for API vs CSV differences
-STANDINGS_NAME_MAP = {
-    "Tottenham Hotspur": "Tottenham Hotspur FC",
-    "Man City": "Manchester City FC",
-    "Man United": "Manchester United FC",
-    "Nott'm Forest": "Nottingham Forest FC",
-    "Wolves": "Wolverhampton Wanderers FC",
-    "Brighton": "Brighton & Hove Albion FC",
-    "West Ham": "West Ham United FC",
-    "Newcastle": "Newcastle United FC",
-    "Leicester": "Leicester City FC",
-}
-
-if __name__ == "__main__":
-    standings = get_current_standings()
-    if standings:
-        for team, pos in sorted(standings.items(), key=lambda x: x[1]):
-            print(f"{pos:2d}. {team}")
