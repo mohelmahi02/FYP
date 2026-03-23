@@ -1,6 +1,13 @@
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+# Load .env from project root
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import os
 
 def get_conn():
 
