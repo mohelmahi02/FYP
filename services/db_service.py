@@ -155,7 +155,7 @@ def list_predictions(limit=50):
     finally:
         conn.close()
 
-def get_recent_predictions(limit=20):
+def get_recent_predictions(limit=200):
     """Return recent predictions as dictionaries"""
     conn = get_conn()
     try:
