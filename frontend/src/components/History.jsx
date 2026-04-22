@@ -15,7 +15,7 @@ const History = () => {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const data = await api.getHistory(50);
+      const data = await api.getHistory(100);
       const evaluated = data.predictions.filter(p => p.actual_result !== null);
       setHistory(evaluated);
       setError(null);
