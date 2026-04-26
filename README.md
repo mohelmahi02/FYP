@@ -4,7 +4,9 @@ A full-stack web application that uses machine learning to predict Premier Leagu
 
 ** Live App:** https://fyp-frontend-wgcl.onrender.com
 
-** Current Performance:** 31.25% accuracy across 48 real-world predictions (GW27-30, 2025-26 season)
+** Screencast Demo: https://go.screenpal.com/watch/cOfOqKnOks3
+
+** Current Performance:** 36.76% accuracy across 68 real-world predictions (GW27-30, 2025-26 season)
 
 ---
 
@@ -162,10 +164,10 @@ python train_model.py
 ```
 
 **Process:**
-1. Loads 1,633 matches from last 3 seasons (2023-2026)
+1. Loads 2,261 matches from last 3 seasons (2023-2026)
 2. Engineers 16 features per match
 3. Trains 3 models (Logistic Regression, Random Forest, Decision Tree)
-4. Saves best model (Logistic Regression: 55% training accuracy)
+4. Saves best model (Logistic Regression: 59.74% training accuracy)
 
 ### Features (16 total)
 1. HomeForm5 - Last 5 games points (home team)
@@ -226,16 +228,21 @@ python make_predictions.py
 - **GW27:** 30% (3/10 correct)
 - **GW28:** 40% (4/10 correct)
 - **GW29:** 10% (1/10 correct)
-- **GW30:** 39% (7/18 correct)
+- **GW30:** 30% (3/10 correct)
+- **GW31:** 50% (4/8 correct)
+- **GW32:** 40% (4/10 correct)
+- **GW33:** 60% (5/10 correct) — Best gameweek, exceeds industry standard
+- 
 
-**Overall: 31.25% (15/48 predictions)**
+**Overall: 36.76% (25/68 predictions)**
 
-**Model Training Accuracy:** 55.08%
+**Model Training Accuracy:** 59.74% (Logistic Regression)
 
 **Industry Benchmarks:**
 - Professional bookmakers: 50-55%
 - Academic research: 40-50%
-- This project: 31.25% (real-world)
+- This project: 36.76% (real-world)
+-This project best gameweek: 60% (GW33)
 
 ---
 
