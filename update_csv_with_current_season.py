@@ -131,3 +131,4 @@ print(f"Old: {len(df_existing)} matches")
 print(f"New: {len(df_combined)} matches")
 print(f"Added: {len(df_new)} matches from 2025-26 season")
 print("="*60)
+ 

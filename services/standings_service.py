@@ -14,7 +14,7 @@ def get_full_standings():
     headers = {"X-Auth-Token": api_key}
     
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
             data = response.json()
